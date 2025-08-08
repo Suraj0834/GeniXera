@@ -1,9 +1,16 @@
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
+import PostOptionsModal from './PostOptionsModal';
 
-const TextPost = ({ isFirstPost = false }) => {
+const TextPost = ({ isFirstPost = false, onOptionsOpen, onOptionsClose, isModalOpen }) => {
+  const { theme } = useTheme();
+  const handleOptionsPress = () => {
+    onOptionsOpen();
+  };
+
   return (
-    <View style={[styles.container, isFirstPost && styles.firstPost]}>
+    <View style={[styles.container, isFirstPost && styles.firstPost, { backgroundColor: theme.card }]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.profileSection}>
@@ -13,15 +20,15 @@ const TextPost = ({ isFirstPost = false }) => {
             resizeMode="cover"
           />
           <View style={styles.userInfo}>
-            <Text style={styles.username}>GeniXera</Text>
-            <Text style={styles.handle}>@genixera</Text>
+            <Text style={[styles.username, { color: theme.text }]}>GeniXera</Text>
+            <Text style={[styles.handle, { color: theme.accent }]}>@genixera</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
           <View style={styles.headerRightContent}>
-            <Text style={styles.timestamp}>2h ago</Text>
-            <TouchableOpacity style={styles.optionsButton}>
-              <Text style={styles.optionsIcon}>⋮</Text>
+            <Text style={[styles.timestamp, { color: theme.placeholder }]}>2h ago</Text>
+            <TouchableOpacity style={styles.optionsButton} onPress={handleOptionsPress}>
+              <Text style={[styles.optionsIcon, { color: theme.text }]}>⋮</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -29,12 +36,14 @@ const TextPost = ({ isFirstPost = false }) => {
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.contentText}>
+        <Text style={[styles.contentText, { color: theme.text }]}>
           "The future belongs to those who believe in the beauty of their dreams." ✨{'\n\n'}
           • Innovation drives progress{'\n'}
           • Community builds strength{'\n'}
           • Technology empowers all{'\n\n'}
-          #GeniXera #Innovation #Future #Tech
+          <Text style={{ color: theme.accent }}>
+            #GeniXera #Innovation #Future #Tech
+          </Text>
         </Text>
       </View>
 
@@ -60,6 +69,13 @@ const TextPost = ({ isFirstPost = false }) => {
           <Image source={require('../assets/post_share.png')} style={styles.shareIcon} resizeMode="contain" />
         </TouchableOpacity>
       </View>
+
+      {/* Post Options Modal */}
+      <PostOptionsModal 
+        isVisible={isModalOpen}
+        onClose={onOptionsClose}
+        postData={{ username: 'GeniXera', handle: '@genixera' }}
+      />
     </View>
   );
 };
@@ -78,7 +94,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   firstPost: {
-    marginTop: 24, // Increased margin for the first post to avoid header overlap
+    marginTop: Platform.OS === 'android' ? 12 : 24, // Reduced margin for Android
   },
   header: {
     flexDirection: 'row',

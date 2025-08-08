@@ -1,10 +1,11 @@
-import { SafeAreaView, StyleSheet, Text, View, TouchableOpacity, Image, useColorScheme, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View, TouchableOpacity, Image, Linking } from 'react-native';
 import React from 'react';
+import { useTheme } from '../theme/ThemeContext';
+import Icon from 'react-native-vector-icons/Feather';
 
 const LoginScreen = ({ navigation }) => {
-  const colorScheme = useColorScheme();
-  const backgroundColor = colorScheme === 'dark' ? '#000' : '#fff';
-  const enterTextColor = colorScheme === 'dark' ? '#fff' : '#000';
+  const { mode, theme, toggleTheme } = useTheme();
 
   const handleLearnMore = () => {
     Linking.openURL('https://metamask.io/en-GB');
@@ -15,21 +16,27 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor }]}> 
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}> 
+      {/* Theme Toggle Button */}
+      <View style={styles.themeToggleContainer}>
+        <TouchableOpacity onPress={toggleTheme} style={styles.themeToggleButton}>
+          <Icon name={mode === 'dark' ? 'sun' : 'moon'} size={24} color={theme.icon} />
+        </TouchableOpacity>
+      </View>
       <View style={styles.logoContainer}>
         <Image source={require('../assets/spalshicon.png')} style={styles.logo} resizeMode="contain" />
       </View>
       <View style={styles.middleContainer}>
-        <Text style={styles.slogan}>Create. Grow. Earn. Own.</Text>
+        <Text style={[styles.slogan, { color: theme.accent }]}>Create. Grow. Earn. Own.</Text>
       </View>
       <View style={styles.bottomContent}>
-        <Text style={[styles.enter, { color: enterTextColor }]}>Enter to GeniXera</Text>
-        <TouchableOpacity style={styles.button} activeOpacity={0.85} onPress={handleConnectLogin}>
-          <Image source={require('../assets/wallet.png')} style={{width: 20, height: 20, marginRight: 8}} resizeMode="contain" />
-          <Text style={styles.buttonText}>Connect / login</Text>
+        <Text style={[styles.enter, { color: theme.text }]}>Enter to GeniXera</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: theme.button }]} activeOpacity={0.85} onPress={handleConnectLogin}>
+          <Text style={styles.walletIcon}>💳</Text>
+          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Connect / login</Text>
         </TouchableOpacity>
-        <Text style={styles.recommended}>Recommended Web3 Wallet</Text>
-        <Text style={styles.learnMore} onPress={handleLearnMore}>learn more</Text>
+        <Text style={[styles.recommended, { color: theme.placeholder }]}>Recommended Web3 Wallet</Text>
+        <Text style={[styles.learnMore, { color: theme.accent }]} onPress={handleLearnMore}>learn more</Text>
       </View>
     </SafeAreaView>
   );
@@ -39,9 +46,28 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  themeToggleContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 16,
+    zIndex: 10,
+    marginTop: 24, // Added marginTop for spacing from status bar
+  },
+  themeToggleButton: {
+    backgroundColor: 'rgba(210, 189, 0, 0.12)',
+    borderRadius: 20,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 48,
     marginBottom: 8,
   },
   logo: {
@@ -56,7 +82,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   slogan: {
-    color: '#D2BD00',
     fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -78,7 +103,6 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     gap: 10,
-    backgroundColor: '#D2BD00',
     borderRadius: 30,
     height: 40,
     width: 310,
@@ -92,23 +116,22 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   buttonText: {
-    color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 0.5,
     textAlign: 'center',
   },
+  walletIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
   recommended: {
-    color: 'gray',
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
+    fontSize: 13,
+    marginBottom: 2,
   },
   learnMore: {
-    color: '#D2BD00',
     fontSize: 14,
-    textAlign: 'center',
-    textDecorationLine: 'underline',
+    fontWeight: 'bold',
     marginTop: 2,
   },
 });

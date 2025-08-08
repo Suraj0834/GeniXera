@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
+import PostOptionsModal from './PostOptionsModal';
 
-const VideoPost = ({ isFirstPost = false }) => {
+const VideoPost = ({ isFirstPost = false, onOptionsOpen, onOptionsClose, isModalOpen, videoHeight = 220 }) => {
+  const { theme } = useTheme();
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const handleOptionsPress = () => {
+    onOptionsOpen();
+  };
+
   return (
-    <View style={[styles.container, isFirstPost && styles.firstPost]}>
+    <View style={[styles.container, isFirstPost && styles.firstPost, { backgroundColor: theme.card }]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.profileSection}>
@@ -15,15 +22,15 @@ const VideoPost = ({ isFirstPost = false }) => {
             resizeMode="cover"
           />
           <View style={styles.userInfo}>
-            <Text style={styles.username}>GeniXera</Text>
-            <Text style={styles.handle}>@genixera</Text>
+            <Text style={[styles.username, { color: theme.text }]}>GeniXera</Text>
+            <Text style={[styles.handle, { color: theme.accent }]}>@genixera</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
           <View style={styles.headerRightContent}>
-            <Text style={styles.timestamp}>6h ago</Text>
-            <TouchableOpacity style={styles.optionsButton}>
-              <Text style={styles.optionsIcon}>⋮</Text>
+            <Text style={[styles.timestamp, { color: theme.placeholder }]}>6h ago</Text>
+            <TouchableOpacity style={styles.optionsButton} onPress={handleOptionsPress}>
+              <Text style={[styles.optionsIcon, { color: theme.text }]}>⋮</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -31,15 +38,17 @@ const VideoPost = ({ isFirstPost = false }) => {
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.contentText}>
+        <Text style={[styles.contentText, { color: theme.text }]}>
           Watch how we're revolutionizing social media! 🎬{'\n\n'}
-          #GeniXera #Video #Innovation
+          <Text style={{ color: theme.accent }}>
+            #GeniXera #Video #Innovation
+          </Text>
         </Text>
       </View>
 
       {/* Video */}
       <View style={styles.videoContainer}>
-        <View style={styles.videoPlaceholder}>
+        <View style={[styles.videoPlaceholder, { height: videoHeight }]}>
           <TouchableOpacity 
             style={styles.playButton}
             onPress={() => setIsPlaying(!isPlaying)}
@@ -82,6 +91,13 @@ const VideoPost = ({ isFirstPost = false }) => {
           <Image source={require('../assets/post_share.png')} style={styles.shareIcon} resizeMode="contain" />
         </TouchableOpacity>
       </View>
+
+      {/* Post Options Modal */}
+      <PostOptionsModal 
+        isVisible={isModalOpen}
+        onClose={onOptionsClose}
+        postData={{ username: 'GeniXera', handle: '@genixera' }}
+      />
     </View>
   );
 };
@@ -100,7 +116,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   firstPost: {
-    marginTop: 24, // Increased margin for the first post to avoid header overlap
+    marginTop: Platform.OS === 'android' ? 12 : 24, // Reduced margin for Android
   },
   header: {
     flexDirection: 'row',

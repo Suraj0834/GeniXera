@@ -1,18 +1,21 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image, useColorScheme, Platform, ScrollView, Animated, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image, Platform, ScrollView, Animated, StatusBar } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
+import { useTheme } from '../theme/ThemeContext';
 import SideNav from '../components/SideNav';
 import BottomNavigation from '../components/BottomNavigation';
 import TextPost from '../components/TextPost';
 import ImagePost from '../components/ImagePost';
 import VideoPost from '../components/VideoPost';
+import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
 
 const HomeScreen = ({ navigation }) => {
-  const colorScheme = useColorScheme();
-  const backgroundColor = colorScheme === 'dark' ? '#000' : '#FFFEF3';
-  const textColor = colorScheme === 'dark' ? '#fff' : '#000';
+  const { mode, theme } = useTheme();
+  const backgroundColor = theme.background;
+  const textColor = theme.text;
   const [activeTab, setActiveTab] = useState('forYou');
   const [isSideNavVisible, setIsSideNavVisible] = useState(false);
   const [activeBottomTab, setActiveBottomTab] = useState('home');
+  const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -33,17 +36,28 @@ const HomeScreen = ({ navigation }) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
     const isScrollingUp = currentScrollY < lastScrollY.current;
     const isScrollingDown = currentScrollY > lastScrollY.current;
-    
+
     // Show header immediately when scrolling up
     if (isScrollingUp) {
       setIsHeaderVisible(true);
-    } 
-    // Hide header when scrolling down and past 50px
-    else if (isScrollingDown && currentScrollY > 50) {
+    } else if (isScrollingDown && currentScrollY > 50) {
       setIsHeaderVisible(false);
     }
-    
+
+    // Close options modal if it's open and user is scrolling
+    if (isOptionsModalOpen) {
+      setIsOptionsModalOpen(false);
+    }
+
     lastScrollY.current = currentScrollY;
+  };
+
+  const handleOptionsModalOpen = () => {
+    setIsOptionsModalOpen(true);
+  };
+
+  const handleOptionsModalClose = () => {
+    setIsOptionsModalOpen(false);
   };
 
   const headerOpacity = scrollY.interpolate({
@@ -60,24 +74,51 @@ const HomeScreen = ({ navigation }) => {
 
   const renderPosts = () => {
     const posts = [];
-    
+    // Different aspect ratios for testing
+    const imageHeights = [120, 180, 220, 300, 400]; // short, square, tall, portrait, very tall
+    const videoHeights = [120, 180, 220, 300, 400];
     // Add 10 sample posts for each tab
     for (let i = 0; i < 10; i++) {
       if (i % 3 === 0) {
-        posts.push(<TextPost key={`text-${i}`} isFirstPost={i === 0} />);
+        posts.push(
+          <TextPost 
+            key={`text-${i}`} 
+            isFirstPost={i === 0}
+            onOptionsOpen={handleOptionsModalOpen}
+            onOptionsClose={handleOptionsModalClose}
+            isModalOpen={isOptionsModalOpen}
+          />
+        );
       } else if (i % 3 === 1) {
-        posts.push(<ImagePost key={`image-${i}`} isFirstPost={i === 0} />);
+        posts.push(
+          <ImagePost 
+            key={`image-${i}`} 
+            isFirstPost={i === 0}
+            onOptionsOpen={handleOptionsModalOpen}
+            onOptionsClose={handleOptionsModalClose}
+            isModalOpen={isOptionsModalOpen}
+            imageHeight={imageHeights[i % imageHeights.length]}
+          />
+        );
       } else {
-        posts.push(<VideoPost key={`video-${i}`} isFirstPost={i === 0} />);
+        posts.push(
+          <VideoPost 
+            key={`video-${i}`} 
+            isFirstPost={i === 0}
+            onOptionsOpen={handleOptionsModalOpen}
+            onOptionsClose={handleOptionsModalClose}
+            isModalOpen={isOptionsModalOpen}
+            videoHeight={videoHeights[i % videoHeights.length]}
+          />
+        );
       }
     }
-    
     return posts;
   };
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
-      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={backgroundColor} />
+    <RNSafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={theme.text === '#fff' ? 'light-content' : 'dark-content'} backgroundColor={backgroundColor} />
       
       {/* Animated Header */}
       <Animated.View 
@@ -142,7 +183,7 @@ const HomeScreen = ({ navigation }) => {
                 Following
               </Text>
             </TouchableOpacity>
-          </View>
+    </View>
         </SafeAreaView>
       </Animated.View>
 
@@ -169,7 +210,7 @@ const HomeScreen = ({ navigation }) => {
         onClose={handleSideNavClose}
         navigation={navigation}
       />
-    </View>
+    </RNSafeAreaView>
   );
 };
 
@@ -197,55 +238,54 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    minHeight: 56,
+    paddingVertical: Platform.OS === 'android' ? 8 : 12, // Reduced padding for Android
+    minHeight: Platform.OS === 'android' ? 48 : 56, // Reduced height for Android
   },
   profileIcon: {
-    width: 44,
-    height: 44,
+    width: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
+    height: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
     justifyContent: 'center',
     alignItems: 'center',
   },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
+    height: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
+    borderRadius: Platform.OS === 'android' ? 18 : 22, // Adjusted for Android
     borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(210, 189, 0, 0.1)',
   },
   iconImage: {
-    width: 28,
-    height: 28,
+    width: Platform.OS === 'android' ? 22 : 28, // Smaller for Android
+    height: Platform.OS === 'android' ? 22 : 28, // Smaller for Android
   },
   centerLogo: {
-    width: 44,
-    height: 44,
+    width: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
+    height: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
     justifyContent: 'center',
     alignItems: 'center',
   },
   mailIcon: {
-    width: 44,
-    height: 44,
+    width: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
+    height: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
     justifyContent: 'center',
     alignItems: 'center',
   },
   mailImage: {
-    width: 28,
-    height: 28,
+    width: Platform.OS === 'android' ? 22 : 28, // Smaller for Android
+    height: Platform.OS === 'android' ? 22 : 28, // Smaller for Android
   },
   navContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 8, // Reduced from 16 to 8
+    paddingVertical: Platform.OS === 'android' ? 12 : 8, // Reduced padding for Android
     gap: 12,
-    // Removed borderTopWidth and borderTopColor
   },
   navButton: {
     flex: 1,
-    height: 44,
-    borderRadius: 22,
+    height: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
+    borderRadius: Platform.OS === 'android' ? 18 : 22, // Adjusted for Android
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
@@ -258,7 +298,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingTop: 170, // Increased space for header to prevent first post cutoff
+    paddingTop: Platform.OS === 'android' ? 140 : 170, // Reduced for Android
   },
   contentContainer: {
     paddingBottom: 20,

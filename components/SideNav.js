@@ -1,10 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated, Dimensions, SafeAreaView } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 const SideNav = ({ isVisible, onClose, navigation }) => {
+  const { theme } = useTheme();
   const slideAnim = React.useRef(new Animated.Value(-width)).current;
+  const insets = useSafeAreaInsets();
 
   React.useEffect(() => {
     if (isVisible) {
@@ -58,67 +62,73 @@ const SideNav = ({ isVisible, onClose, navigation }) => {
           styles.sideNav,
           {
             transform: [{ translateX: slideAnim }],
+            backgroundColor: theme.sideNavBackground,
+            borderColor: theme.accent,
+            paddingTop: insets.top + 10,
+            paddingBottom: insets.bottom + 10,
           },
         ]}
       >
-        {/* App Logo - Replace with your custom logo icon */}
-        <View style={styles.logoContainer}>
-          <Image source={require('../assets/Group 5.png')} style={styles.logo} resizeMode="contain" />
-          {/* TODO: Replace with your custom app logo icon */}
-        </View>
-
-        {/* Navigation Menu */}
-        <View style={styles.menuContainer}>
-          {menuItems.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.menuItem}
-              onPress={() => {
-                navigation.navigate(item.screen);
-                handleClose();
-              }}
-            >
-              {/* TODO: Replace with your custom icon for each menu item */}
-              <View style={styles.iconContainer}>
-                <Image source={item.icon} style={styles.menuIcon} resizeMode="contain" />
-                {/* 
-                Custom Icon Placement Guide:
-                - Home: Place your home icon here
-                - Explore: Place your search/explore icon here  
-                - Marketplace: Place your marketplace/shop icon here
-                - Profile: Place your user/profile icon here
-                - Rewards: Place your rewards/diamond icon here
-                - Setting: Place your settings/gear icon here
-                */}
-              </View>
-              <Text style={styles.menuLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* User Profile Section */}
-        <View style={styles.profileSection}>
-          {/* Profile Picture */}
-          <View style={styles.profilePictureContainer}>
-            <Image source={require('../assets/Profile.png')} style={styles.profileLogo} resizeMode="contain" />
+        <SafeAreaView style={styles.safeArea}>
+          {/* App Logo - Replace with your custom logo icon */}
+          <View style={styles.logoContainer}>
+            <Image source={require('../assets/Group 5.png')} style={styles.logo} resizeMode="contain" />
+            {/* TODO: Replace with your custom app logo icon */}
           </View>
-          
-          {/* Name and User ID with More Button */}
-          <View style={styles.profileTextContainer}>
-            <View style={styles.profileInfo}>
-              <Text style={styles.username}>GeniXera</Text>
-              <Text style={styles.handle}>@geni.xera</Text>
+
+          {/* Navigation Menu */}
+          <View style={styles.menuContainer}>
+            {menuItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.menuItem}
+                onPress={() => {
+                  navigation.navigate(item.screen);
+                  handleClose();
+                }}
+              >
+                {/* TODO: Replace with your custom icon for each menu item */}
+                <View style={styles.iconContainer}>
+                  <Image source={item.icon} style={styles.menuIcon} resizeMode="contain" />
+                  {/* 
+                  Custom Icon Placement Guide:
+                  - Home: Place your home icon here
+                  - Explore: Place your search/explore icon here  
+                  - Marketplace: Place your marketplace/shop icon here
+                  - Profile: Place your user/profile icon here
+                  - Rewards: Place your rewards/diamond icon here
+                  - Setting: Place your settings/gear icon here
+                  */}
+                </View>
+                <Text style={styles.menuLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* User Profile Section */}
+          <View style={styles.profileSection}>
+            {/* Profile Picture */}
+            <View style={styles.profilePictureContainer}>
+              <Image source={require('../assets/Profile.png')} style={styles.profileLogo} resizeMode="contain" />
             </View>
-            <TouchableOpacity style={styles.moreButton}>
-              <Image source={require('../assets/ThreeDot.png')} style={styles.moreIcon} resizeMode="contain" />
-            </TouchableOpacity>
+            
+            {/* Name and User ID with More Button */}
+            <View style={styles.profileTextContainer}>
+              <View style={styles.profileInfo}>
+                <Text style={styles.username}>GeniXera</Text>
+                <Text style={styles.handle}>@geni.xera</Text>
+              </View>
+              <TouchableOpacity style={styles.moreButton}>
+                <Image source={require('../assets/ThreeDot.png')} style={styles.moreIcon} resizeMode="contain" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.statsContainer}>
+              <Text style={styles.statText}>1k Following</Text>
+              <Text style={styles.statText}>2.6M Followers</Text>
+            </View>
           </View>
-          
-          <View style={styles.statsContainer}>
-            <Text style={styles.statText}>1k Following</Text>
-            <Text style={styles.statText}>2.6M Followers</Text>
-          </View>
-        </View>
+        </SafeAreaView>
       </Animated.View>
     </>
   );
@@ -139,10 +149,10 @@ const styles = StyleSheet.create({
   },
   sideNav: {
     position: 'absolute',
-    top: 80,
+    top: 0, // Changed from 80 to 0 to remove top space
     left: 0,
     width: width * 0.65,
-    height: height - 80,
+    height: height, // Changed from height - 80 to height to use full height
     backgroundColor: '#FFFEF3',
     zIndex: 1000,
     borderTopRightRadius: 20,
@@ -150,14 +160,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D2BD00',
     borderLeftWidth: 0,
-    // paddingTop: 7,
     paddingHorizontal: 20,
     paddingBottom: 30,
+  },
+  safeArea: {
+    flex: 1,
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 25,
-    paddingTop: 25,
+    paddingTop: 10, // Reduced from 25 to 10 for minimal top padding
   },
   logo: {
     width: 25,
