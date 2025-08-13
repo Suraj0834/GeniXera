@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Linking, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Linking, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 
 const SignUpScreen = ({ navigation }) => {
@@ -18,35 +19,47 @@ const SignUpScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}> 
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.logoContainer}>
         <Image source={require('../assets/spalshicon.png')} style={styles.logo} resizeMode="contain" />
       </View>
       <View style={styles.middleContainer}>
-        <Text style={[styles.title, { color: theme.text }]}>Sign Up</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
-          placeholder="Username"
-          placeholderTextColor={theme.placeholder}
-          value={username}
-          onChangeText={setUsername}
-        />
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.text }]}
-          placeholder="Password"
-          placeholderTextColor={theme.placeholder}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View style={styles.titleContainer}>
+          <Text style={[styles.title, { color: theme.accent }]}>Sign Up</Text>
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.text }]}>Username</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: '#dad6b0', borderColor: theme.inputBorder, color: theme.text }]}
+            placeholderTextColor={theme.placeholder}
+            value={username}
+            onChangeText={setUsername}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.text }]}>Password</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: '#dad6b0', borderColor: theme.inputBorder, color: theme.text }]}
+            placeholderTextColor={theme.placeholder}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
+      </View>
+      <View style={styles.bottomContainer}>
         <TouchableOpacity style={[styles.signUpButton, { backgroundColor: theme.button }]} onPress={handleSignUp}>
           <Text style={[styles.signUpButtonText, { color: theme.buttonText }]}>Sign Up</Text>
         </TouchableOpacity>
         <View style={styles.legalContainer}>
           <Text style={[styles.legalText, { color: theme.placeholder }]}>By signing up, you agree to our </Text>
-          <Text style={[styles.legalLink, { color: theme.accent }]} onPress={handleTermsPress}>Terms</Text>
+          <Text style={[styles.legalLink, { color: theme.accent }]} onPress={handleTermsPress}>
+            Terms
+          </Text>
           <Text style={[styles.legalText, { color: theme.placeholder }]}> and </Text>
-          <Text style={[styles.legalLink, { color: theme.accent }]} onPress={handlePrivacyPress}>Privacy Policy</Text>
+          <Text style={[styles.legalLink, { color: theme.accent }]} onPress={handlePrivacyPress}>
+            Privacy Policy
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -57,51 +70,68 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 48,
+    marginTop: 20,
     marginBottom: 8,
   },
   logo: {
-    width: 60,
-    height: 60,
-    alignSelf: 'center',
+    width: 40,
+    height: 40,
+    tintColor: '#D2BD00',
   },
   middleContainer: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    marginTop: 15,
+  },
+  bottomContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  titleContainer: {
+    width: '100%',
+    paddingLeft: 78,
+    marginBottom: 30,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 24,
+  },
+  inputContainer: {
+    width: 310,
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 15,
+    marginBottom: 6,
+    fontWeight: '500',
   },
   input: {
     width: 310,
-    height: 44,
-    borderRadius: 12,
+    height: 55,
+    borderRadius: 20,
     borderWidth: 1,
     paddingHorizontal: 16,
     fontSize: 16,
-    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   signUpButton: {
     width: 310,
-    height: 44,
+    height: 40,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 24,
-    shadowColor: '#D2BD00',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    marginBottom: 8,
   },
   signUpButtonText: {
     fontSize: 16,
@@ -110,10 +140,10 @@ const styles = StyleSheet.create({
   },
   legalContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    width: '80%',
   },
   legalText: {
     fontSize: 13,

@@ -6,6 +6,7 @@ import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import SignUpScreen from './screens/SignUpScreen';
 import CreatPostScreen from './screens/CreatPostScreen';
+import MediaEditScreen from './screens/MediaEditScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import MarketPlaceScreen from './screens/MarketPlaceScreen';
 import ExploreScreen from './screens/ExploreScreen';
@@ -27,6 +28,7 @@ export default function App() {
             <Stack.Screen name="SignUp" component={SignUpScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="CreatPost" component={CreatPostScreen} />
+            <Stack.Screen name="MediaEdit" component={MediaEditScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="MarketPlace" component={MarketPlaceScreen} />
             <Stack.Screen name="Explore" component={ExploreScreen} />

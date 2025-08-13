@@ -29,11 +29,19 @@ export const ThemeProvider = ({ children }) => {
 
   if (!isLoaded) return null;
 
+  const theme = themes[mode] || themes.light;
+
   return (
-    <ThemeContext.Provider value={{ mode, theme: themes[mode], toggleTheme }}>
+    <ThemeContext.Provider value={{ mode, theme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};

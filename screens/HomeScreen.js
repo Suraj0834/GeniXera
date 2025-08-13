@@ -10,7 +10,7 @@ import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
 
 const HomeScreen = ({ navigation }) => {
   const { mode, theme } = useTheme();
-  const backgroundColor = theme.background;
+  const backgroundColor = theme.backgroundHome;
   const textColor = theme.text;
   const [activeTab, setActiveTab] = useState('forYou');
   const [isSideNavVisible, setIsSideNavVisible] = useState(false);
@@ -189,7 +189,7 @@ const HomeScreen = ({ navigation }) => {
 
       {/* Content Area */}
       <Animated.ScrollView 
-        style={styles.content} 
+        style={[styles.content ,{backgroundColor: theme.backgroundHome}]} 
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
@@ -202,6 +202,7 @@ const HomeScreen = ({ navigation }) => {
       <BottomNavigation 
         activeTab={activeBottomTab}
         onTabPress={handleBottomTabPress}
+        navigation={navigation}
       />
 
       {/* Side Navigation */}
@@ -224,11 +225,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    // elevation: 5,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
   },
   safeArea: {
     paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight || 0,
@@ -238,8 +239,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: Platform.OS === 'android' ? 8 : 12, // Reduced padding for Android
-    minHeight: Platform.OS === 'android' ? 48 : 56, // Reduced height for Android
+    paddingVertical: Platform.OS === 'android' ? 4 : 4, // Reduced padding for Android
+    minHeight: Platform.OS === 'android' ? 45 : 45, // Reduced height for Android
   },
   profileIcon: {
     width: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
@@ -280,12 +281,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: Platform.OS === 'android' ? 12 : 8, // Reduced padding for Android
-    gap: 12,
+    gap: 6,
   },
   navButton: {
     flex: 1,
     height: Platform.OS === 'android' ? 36 : 44, // Smaller for Android
-    borderRadius: Platform.OS === 'android' ? 18 : 22, // Adjusted for Android
+    borderRadius: Platform.OS === 'android' ? 15 : 15, // Adjusted for Android
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
@@ -298,11 +299,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? 140 : 170, // Reduced for Android
+    paddingTop: Platform.OS === 'android' ? 100 : 95, // Reduced gap between header and first post
   },
   contentContainer: {
     paddingBottom: 20,
-    paddingTop: 8, // Additional top padding for content container
+    paddingTop: 4, // Reduced top padding for content container
+    marginBottom: 20,
   },
   contentText: {
     fontSize: 18,

@@ -16,7 +16,7 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}> 
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom', 'left', 'right']}>
       {/* Theme Toggle Button */}
       <View style={styles.themeToggleContainer}>
         <TouchableOpacity onPress={toggleTheme} style={styles.themeToggleButton}>
@@ -32,7 +32,7 @@ const LoginScreen = ({ navigation }) => {
       <View style={styles.bottomContent}>
         <Text style={[styles.enter, { color: theme.text }]}>Enter to GeniXera</Text>
         <TouchableOpacity style={[styles.button, { backgroundColor: theme.button }]} activeOpacity={0.85} onPress={handleConnectLogin}>
-          <Text style={styles.walletIcon}>💳</Text>
+         <Image source={require('../assets/wallet.png')} style={styles.walletIcon} resizeMode="contain" />
           <Text style={[styles.buttonText, { color: theme.buttonText }]}>Connect / login</Text>
         </TouchableOpacity>
         <Text style={[styles.recommended, { color: theme.placeholder }]}>Recommended Web3 Wallet</Text>
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     top: 0,
     right: 16,
     zIndex: 10,
-    marginTop: 24, // Added marginTop for spacing from status bar
+    marginTop: 40, // Increased from 24 to 40 for more margin from the top
   },
   themeToggleButton: {
     backgroundColor: 'rgba(210, 189, 0, 0.12)',
@@ -67,13 +67,13 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 48,
+    marginTop: 20,
     marginBottom: 8,
   },
   logo: {
-    width: 60,
-    height: 60,
-    alignSelf: 'center',
+    width: 40,
+    height: 40,
+    tintColor: '#D2BD00',
   },
   middleContainer: {
     flex: 1,
@@ -122,8 +122,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   walletIcon: {
-    fontSize: 20,
-    marginRight: 8,
+    width: 22,
+    height: 20,
   },
   recommended: {
     fontSize: 13,

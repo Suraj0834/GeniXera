@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, Image, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import ReportScreen from './ReportScreen';
 
 const { width, height } = Dimensions.get('window');
 
@@ -8,6 +9,7 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
   const { theme } = useTheme();
   const slideAnim = React.useRef(new Animated.Value(height)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const [isReportScreenVisible, setIsReportScreenVisible] = React.useState(false);
 
   React.useEffect(() => {
     if (isVisible) {
@@ -66,7 +68,13 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
   const handleOptionPress = (option) => {
     // Handle different options here
     console.log('Selected option:', option);
-    handleClose();
+    
+    if (option === 'report') {
+      setIsReportScreenVisible(true);
+      handleClose();
+    } else {
+      handleClose();
+    }
   };
 
   const options = [
@@ -124,6 +132,13 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
           </View>
         </Animated.View>
       </View>
+      
+      {/* Report Screen */}
+      <ReportScreen 
+        isVisible={isReportScreenVisible}
+        onClose={() => setIsReportScreenVisible(false)}
+        postData={postData}
+      />
     </Modal>
   );
 };

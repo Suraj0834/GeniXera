@@ -1,94 +1,120 @@
 import React from 'react';
-import { View, TouchableOpacity, Image, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, Image, StyleSheet, Platform, Dimensions } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 const ICONS = [
-  { key: 'home', src: require('../assets/Home.png') },
-  { key: 'search', src: require('../assets/Search_icon.png') },
-  { key: 'plus', src: require('../assets/Add_post.png') },
-  { key: 'market', src: require('../assets/marketplace_two.png') },
-  { key: 'bell', src: require('../assets/bell_icon.png') },
+  { key: 'home', src: require('../assets/Home.png'), size: { width: 18, height: 18 } },
+  { key: 'search', src: require('../assets/Search_icon.png'), size: { width: 29, height: 29 } },
+  { key: 'plus', src: require('../assets/Add_post.png'), size: { width: 38, height: 38 } },
+  { key: 'market', src: require('../assets/marketplace_two.png'), size: { width: 29, height: 29 } },
+  { key: 'bell', src: require('../assets/bell_icon.png'), size: { width: 27, height: 27} },
 ];
 
-const BottomNavigation = ({ activeTab, onTabPress }) => {
-  const { theme } = useTheme();
+const BottomNavigation = ({ activeTab, onTabPress, navigation }) => {
+  const { theme, mode } = useTheme();
   const insets = useSafeAreaInsets();
-  const bottomPad = Math.max(insets.bottom, 12);
+
+  const bottomPadding = Platform.OS === 'ios' ? Math.max(insets.bottom, 8) : Math.max(insets.bottom, 4);
+
+  const handleTabPress = (tabKey) => {
+    if (tabKey === 'plus') {
+      navigation.navigate('CreatPost');
+    } else {
+      onTabPress(tabKey);
+    }
+  };
 
   return (
-    <View style={[
-      styles.floatingBar,
-      {
-        backgroundColor: theme.card + 'EE', // translucent
-        shadowColor: theme.accent,
-        bottom: bottomPad + 8,
-        borderColor: theme.accent,
-      },
-    ]}>
-      {ICONS.map((icon, idx) => {
-        const isActive = activeTab === icon.key;
-        return (
-          <TouchableOpacity
-            key={icon.key}
-            style={[
-              styles.iconButton,
-              isActive && {
-                backgroundColor: theme.accent,
-                shadowColor: theme.accent,
-                shadowOpacity: 0.18,
-                shadowRadius: 8,
-                elevation: 6,
-              },
-            ]}
-            activeOpacity={0.8}
-            onPress={() => onTabPress(icon.key)}
-          >
-            <Image
-              source={icon.src}
+    <View style={[styles.container, { paddingBottom: bottomPadding, backgroundColor: theme.BottomNavigationBackground }]}>
+      <View style={[styles.navigationBar, { backgroundColor: theme.BottomNavigationBackground }]}>
+        {ICONS.map((icon) => {
+          const isActive = activeTab === icon.key;
+          const isPlusButton = icon.key === 'plus';
+
+          return (
+            <TouchableOpacity
+              key={icon.key}
               style={[
-                styles.icon,
-                isActive && { tintColor: theme.buttonText, width: 32, height: 32 },
+                styles.iconButton,
+                isPlusButton && styles.plusButton,
               ]}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        );
-      })}
+              onPress={() => handleTabPress(icon.key)}
+            >
+              <View style={styles.iconWrapper}>
+                <Image
+                  source={icon.src}
+                  style={[
+                    styles.icon,
+                    icon.size,
+                  ]}
+                  resizeMode="contain"
+                />
+                {isActive && !isPlusButton && <View style={styles.activeDot} />}
+                {icon.key === 'bell' && <View style={styles.notificationDot} />}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  floatingBar: {
+  container: {
     position: 'absolute',
-    left: 20,
-    right: 20,
-    height: 64,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    backgroundColor: '#FFFEF3', // Default light background, overridden by theme
+    borderTopWidth: 1,
+    borderTopColor: '#D2BD00',
+  },
+  navigationBar: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 32,
-    borderWidth: 1.5,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 10,
-    paddingHorizontal: 18,
-    zIndex: 100,
+    height: 45,
+    paddingHorizontal: 0,
   },
   iconButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 2,
+    height: '100%',
+    paddingTop: Platform.OS === 'android' ? 8 : 8, // Replaced paddingVertical with paddingTop
+  },
+  plusButton: {
+    flex: 1.2, // Slightly larger for emphasis, no zoom effect
+  },
+  iconWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   icon: {
-    width: 26,
-    height: 26,
-    tintColor: undefined,
+    // marginBottom: 2, // Removed to eliminate gap below icon
+  },
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D2BD00',
+    marginTop: 4,
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 4,
+    right: -1,
+    width: 6,
+    height: 6,
+    borderRadius: 5,
+    backgroundColor: '#FF4040',
+
   },
 });
 
