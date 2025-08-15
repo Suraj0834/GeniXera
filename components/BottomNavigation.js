@@ -8,7 +8,7 @@ const { width: screenWidth } = Dimensions.get('window');
 const ICONS = [
   { key: 'home', src: require('../assets/Home.png'), size: { width: 20, height: 20 } },
   { key: 'search', src: require('../assets/Search_icon.png'), size: { width: 20, height: 20 } },
-  { key: 'plus', src: require('../assets/Add_post.png'), size: { width: 38, height: 38 } },
+  { key: 'plus', src: require('../assets/sampleicon.png'), size: { width: 60, height: 60 } },
   { key: 'market', src: require('../assets/marketplace_two.png'), size: { width: 38, height: 38 } },
   { key: 'bell', src: require('../assets/bell_icon.png'), size: { width: 20, height: 20} },
 ];
