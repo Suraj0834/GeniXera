@@ -72,7 +72,7 @@ const SideNav = ({ isVisible, onClose, navigation }) => {
         <SafeAreaView style={styles.safeArea}>
           {/* App Logo - Replace with your custom logo icon */}
           <View style={styles.logoContainer}>
-            <Image source={require('../assets/Group 5.png')} style={styles.logo} resizeMode="contain" />
+            <Image source={require('../assets/spalshicon.png')} style={styles.logo} resizeMode="contain" />
             {/* TODO: Replace with your custom app logo icon */}
           </View>
 

@@ -1,8 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, Platform, InteractionManager } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { BlurView } from '@react-native-community/blur';
+import { SafeAreaView } from 'react-native-safe-area-context'; // Add this import
 
 const { width, height } = Dimensions.get('window');
+
+// Helper for bottom navigation bar height (Android)
+const getBottomSpace = () => {
+  if (Platform.OS === 'android') {
+    // Typical navigation bar height is 48, but can vary
+    return 48;
+  }
+  // iOS handled by SafeAreaView
+  return 0;
+};
 
 const ReportScreen = ({ isVisible, onClose, postData }) => {
   const { theme } = useTheme();
@@ -11,10 +23,8 @@ const ReportScreen = ({ isVisible, onClose, postData }) => {
 
   React.useEffect(() => {
     if (isVisible) {
-      // Reset position and fade in
       slideAnim.setValue(height);
       fadeAnim.setValue(0);
-      
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
@@ -28,21 +38,18 @@ const ReportScreen = ({ isVisible, onClose, postData }) => {
         }),
       ]).start();
     } else {
-      // Fade out and slide down
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: height,
-          duration: 250,
+          duration: Platform.OS === 'android' ? 180 : 250, // Shorter duration for Android
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: 200,
+          duration: Platform.OS === 'android' ? 120 : 200, // Shorter duration for Android
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        onClose();
-      });
+      ]).start();
     }
   }, [isVisible]);
 
@@ -50,16 +57,19 @@ const ReportScreen = ({ isVisible, onClose, postData }) => {
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: height,
-        duration: 250,
+        duration: Platform.OS === 'android' ? 180 : 250, // Shorter duration for Android
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 200,
+        duration: Platform.OS === 'android' ? 120 : 200, // Shorter duration for Android
         useNativeDriver: true,
       }),
     ]).start(() => {
-      onClose();
+      // Defer onClose until after animation for smoother experience
+      InteractionManager.runAfterInteractions(() => {
+        onClose();
+      });
     });
   };
 
@@ -86,53 +96,62 @@ const ReportScreen = ({ isVisible, onClose, postData }) => {
       onRequestClose={handleClose}
       statusBarTranslucent={true}
     >
-      <View style={[styles.container, { backgroundColor: theme.overlay }]}>
+      <View style={styles.container}>
+        <BlurView
+          style={styles.blurOverlay}
+          blurType={theme.mode === 'dark' ? 'dark' : 'light'}
+          blurAmount={16}
+          reducedTransparencyFallbackColor={theme.overlay}
+        />
         <TouchableOpacity
-          style={styles.overlay}
+          style={styles.touchOverlay}
           activeOpacity={1}
           onPress={handleClose}
         />
-
         <Animated.View
           style={[
             styles.modalContainer,
             { 
               backgroundColor: theme.mode === 'dark' ? '#1A1A1A' : '#2A2A2A',
-              transform: [{ translateY: slideAnim }] 
+              transform: [{ translateY: slideAnim }],
+              // Add extra margin for Android on-screen nav
+              marginBottom: Platform.OS === 'android' ? getBottomSpace() : 0,
             },
           ]}
         >
-          {/* Drag Handle */}
-          <View style={[styles.dragHandle, { backgroundColor: theme.mode === 'dark' ? '#FFFFFF' : '#FFFFFF' }]} />
-          
-          {/* Header Context (if available) */}
-          {postData && (
-            <View style={styles.headerContext}>
-              <Text style={[styles.contextText, { color: '#FFFFFF' }]}>
-                Trending in India
-              </Text>
-              <Text style={[styles.trendText, { color: '#FFFFFF' }]}>
-                {postData.title || 'F-35'}
-              </Text>
-            </View>
-          )}
-          
-          {/* Report Options Container */}
-          <View style={styles.optionsContainer}>
-            {reportOptions.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.optionItem}
-                onPress={() => handleReportOption(option.action)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.emoji}>{option.emoji}</Text>
-                <Text style={[styles.optionText, { color: '#FFFFFF' }]}>
-                  {option.text}
+          <SafeAreaView edges={['bottom']} style={{flex: 1}}>
+            {/* Drag Handle */}
+            <View style={[styles.dragHandle, { backgroundColor: theme.mode === 'dark' ? '#FFFFFF' : '#FFFFFF' }]} />
+            
+            {/* Header Context (if available) */}
+            {postData && (
+              <View style={styles.headerContext}>
+                <Text style={[styles.contextText, { color: '#FFFFFF' }]}>
+                  Trending in India
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                <Text style={[styles.trendText, { color: '#FFFFFF' }]}>
+                  {postData.title || 'F-35'}
+                </Text>
+              </View>
+            )}
+            
+            {/* Report Options Container */}
+            <View style={styles.optionsContainer}>
+              {reportOptions.map((option, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.optionItem}
+                  onPress={() => handleReportOption(option.action)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.emoji}>{option.emoji}</Text>
+                  <Text style={[styles.optionText, { color: '#FFFFFF' }]}>
+                    {option.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </SafeAreaView>
         </Animated.View>
       </View>
     </Modal>
@@ -144,13 +163,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  blurOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 998,
+  },
+  touchOverlay: {
+    ...StyleSheet.absoluteFillObject,
     zIndex: 999,
   },
   modalContainer: {
@@ -158,14 +176,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    height: height * 0.5,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     zIndex: 1000,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    paddingBottom: (Platform.OS === 'ios' ? 34 : 34) + 16, // Added extra bottom padding
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
+    // marginBottom removed from here, now handled inline above
   },
   dragHandle: {
     width: 36,
@@ -215,4 +235,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ReportScreen; 
+export default ReportScreen;

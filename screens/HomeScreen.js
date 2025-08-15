@@ -7,6 +7,7 @@ import TextPost from '../components/TextPost';
 import ImagePost from '../components/ImagePost';
 import VideoPost from '../components/VideoPost';
 import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
+import ReportScreen from '../components/ReportScreen';
 
 const HomeScreen = ({ navigation }) => {
   const { mode, theme } = useTheme();
@@ -16,6 +17,8 @@ const HomeScreen = ({ navigation }) => {
   const [isSideNavVisible, setIsSideNavVisible] = useState(false);
   const [activeBottomTab, setActiveBottomTab] = useState('home');
   const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
+  const [isReportVisible, setIsReportVisible] = useState(false);
+  const [reportPostData, setReportPostData] = useState(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -60,6 +63,18 @@ const HomeScreen = ({ navigation }) => {
     setIsOptionsModalOpen(false);
   };
 
+  // Handler to open ReportScreen
+  const handleReportOpen = (postData) => {
+    setReportPostData(postData);
+    setIsReportVisible(true);
+  };
+
+  // Handler to close ReportScreen
+  const handleReportClose = () => {
+    setIsReportVisible(false);
+    setReportPostData(null);
+  };
+
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 30],
     outputRange: [1, 0],
@@ -87,6 +102,8 @@ const HomeScreen = ({ navigation }) => {
             onOptionsOpen={handleOptionsModalOpen}
             onOptionsClose={handleOptionsModalClose}
             isModalOpen={isOptionsModalOpen}
+            // Pass handler for report
+            onReport={() => handleReportOpen({ type: 'text', index: i, title: `Text Post #${i+1}` })}
           />
         );
       } else if (i % 3 === 1) {
@@ -98,6 +115,7 @@ const HomeScreen = ({ navigation }) => {
             onOptionsClose={handleOptionsModalClose}
             isModalOpen={isOptionsModalOpen}
             imageHeight={imageHeights[i % imageHeights.length]}
+            onReport={() => handleReportOpen({ type: 'image', index: i, title: `Image Post #${i+1}` })}
           />
         );
       } else {
@@ -109,6 +127,7 @@ const HomeScreen = ({ navigation }) => {
             onOptionsClose={handleOptionsModalClose}
             isModalOpen={isOptionsModalOpen}
             videoHeight={videoHeights[i % videoHeights.length]}
+            onReport={() => handleReportOpen({ type: 'video', index: i, title: `Video Post #${i+1}` })}
           />
         );
       }
@@ -210,6 +229,13 @@ const HomeScreen = ({ navigation }) => {
         isVisible={isSideNavVisible}
         onClose={handleSideNavClose}
         navigation={navigation}
+      />
+
+      {/* ReportScreen Modal */}
+      <ReportScreen
+        isVisible={isReportVisible}
+        onClose={handleReportClose}
+        postData={reportPostData}
       />
     </RNSafeAreaView>
   );

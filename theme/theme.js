@@ -17,8 +17,8 @@ const lightTheme = {
 };
 
 const darkTheme = {
-  background: '#0e0c01',
-  backgroundHome: '#0e0c01',
+  background: '#000000',
+  backgroundHome: '#000000',
   text: '#fefdfdff', // softer white for posts
   accent: '#D2BD00',
   button: '#D2BD00',
@@ -28,7 +28,7 @@ const darkTheme = {
   placeholder: '#d5d5d5ff',
   card: '#181818',
   border: '#333',
-  BottomNavigationBackground: '#0e0c01', // dark mode bottom navigation
+  BottomNavigationBackground: '#000000', // dark mode bottom navigation
   icon: '#D2BD00',
   overlay: 'rgba(0,0,0,0.7)',
   sideNavBackground: '#0E0C01', // dark mode sidenav

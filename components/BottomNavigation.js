@@ -6,11 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width: screenWidth } = Dimensions.get('window');
 
 const ICONS = [
-  { key: 'home', src: require('../assets/Home.png'), size: { width: 18, height: 18 } },
-  { key: 'search', src: require('../assets/Search_icon.png'), size: { width: 29, height: 29 } },
+  { key: 'home', src: require('../assets/Home.png'), size: { width: 20, height: 20 } },
+  { key: 'search', src: require('../assets/Search_icon.png'), size: { width: 20, height: 20 } },
   { key: 'plus', src: require('../assets/Add_post.png'), size: { width: 38, height: 38 } },
-  { key: 'market', src: require('../assets/marketplace_two.png'), size: { width: 29, height: 29 } },
-  { key: 'bell', src: require('../assets/bell_icon.png'), size: { width: 27, height: 27} },
+  { key: 'market', src: require('../assets/marketplace_two.png'), size: { width: 38, height: 38 } },
+  { key: 'bell', src: require('../assets/bell_icon.png'), size: { width: 20, height: 20} },
 ];
 
 const BottomNavigation = ({ activeTab, onTabPress, navigation }) => {
@@ -108,8 +108,8 @@ const styles = StyleSheet.create({
   },
   notificationDot: {
     position: 'absolute',
-    top: 4,
-    right: -1,
+    top: 0,
+    right: -2,
     width: 6,
     height: 6,
     borderRadius: 5,

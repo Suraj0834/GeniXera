@@ -42,6 +42,9 @@ const CreatPostScreen = ({ navigation, route }) => {
   const [isLoadingGifs, setIsLoadingGifs] = useState(false);
   const [trendingGifs, setTrendingGifs] = useState([]);
 
+  // Add this to get callback from HomeScreen
+  const addPostToHome = route.params?.addPostToHome;
+
   useEffect(() => {
     if (route.params?.editedMedia) {
       setSelectedMedia(route.params.editedMedia);
@@ -192,7 +195,20 @@ const CreatPostScreen = ({ navigation, route }) => {
   };
 
   const handlePost = () => {
-    navigation.goBack();
+    // Prepare post data
+    const newPost = {
+      text: postText,
+      media: selectedMedia,
+      poll: createdPoll,
+      createdAt: new Date().toISOString(),
+      // add other fields as needed
+    };
+    // Add post to HomeScreen if callback exists
+    if (typeof addPostToHome === 'function') {
+      addPostToHome(newPost);
+    }
+    // Navigate to HomeScreen
+    navigation.navigate('Home');
   };
 
   const renderGifItem = ({ item }) => (
@@ -220,7 +236,12 @@ const CreatPostScreen = ({ navigation, route }) => {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={[styles.headerButton, { color: theme.accent }]}>Cancel</Text>
+          {/* Replace Cancel text with left arrow icon */}
+          <Image
+            source={require('../assets/arrow_left.png')} // Use your left arrow icon here
+            style={[styles.headerIcon, { tintColor: theme.icon }]}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
         <TouchableOpacity 
           style={[
@@ -305,76 +326,64 @@ const CreatPostScreen = ({ navigation, route }) => {
           )}
         </ScrollView>
 
-        {/* Bottom Toolbar - Fixed to match original design */}
-        <View style={[
-          styles.bottomToolbar, 
-          { 
-            backgroundColor: theme.background,
-            borderTopColor: theme.border,
-            paddingBottom: insets.bottom
-          }
-        ]}>
-          <View style={styles.mediaIcons}>
-            {/* Camera/Image Icon */}
+        {/* Improved Bottom Toolbar */}
+        <SafeAreaView
+          edges={[]} // changed from ['bottom'] to [] to avoid extra bottom space
+          style={[
+            styles.bottomToolbarNatural, 
+            {
+              backgroundColor: theme.card,
+              borderTopColor: theme.accent,
+              borderTopWidth: 1,
+              // removed paddingBottom logic
+            }
+          ]}
+        >
+          <View style={styles.mediaIconsNatural}>
             <TouchableOpacity 
-              style={styles.mediaButton}
+              style={styles.mediaButtonNatural}
               onPress={handleMediaPress}
               activeOpacity={0.7}
             >
               <Image 
                 source={require('../assets/camera_icon.png')} 
-                style={[styles.mediaIcon, { tintColor: theme.accent }]}
+                style={[styles.mediaIconNatural, { tintColor: theme.accent }]}
                 resizeMode="contain"
               />
             </TouchableOpacity>
-
-            {/* GIF Icon */}
             <TouchableOpacity 
-              style={styles.mediaButton}
+              style={styles.mediaButtonNatural}
               onPress={handleGifPress}
               activeOpacity={0.7}
             >
-              <Text style={[styles.mediaIconText, { color: theme.accent }]}>GIF</Text>
+              <Text style={[styles.mediaIconTextNatural, { color: theme.accent }]}>GIF</Text>
             </TouchableOpacity>
-
-            {/* Poll Icon */}
             <TouchableOpacity 
-              style={styles.mediaButton}
+              style={styles.mediaButtonNatural}
               onPress={handlePollPress}
               activeOpacity={0.7}
             >
               <Image 
                 source={require('../assets/ic_outline-poll.png')} 
-                style={[styles.mediaIcon, { tintColor: theme.accent }]}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
-            {/* Emoji Icon */}
-            <TouchableOpacity 
-              style={styles.mediaButton}
-              activeOpacity={0.7}
-            >
-              <Image 
-                source={require('../assets/emoji_icon.png')} 
-                style={[styles.mediaIcon, { tintColor: theme.accent }]}
+                style={[styles.mediaIconNatural, { tintColor: theme.accent }]}
                 resizeMode="contain"
               />
             </TouchableOpacity>
           </View>
-
-          {/* Character Count */}
+          {/* Character count inside toolbar, right-aligned */}
           {postText.length > 0 && (
-            <Text style={[
-              styles.characterCount, 
-              { 
-                color: postText.length > 260 ? '#FF6B6B' : theme.placeholder,
-              }
-            ]}>
-              {postText.length}/280
-            </Text>
+            <View style={styles.characterCountNaturalContainer}>
+              <Text style={[
+                styles.characterCountNatural,
+                {
+                  color: postText.length > 260 ? '#FF6B6B' : theme.placeholder,
+                }
+              ]}>
+                {postText.length}/280
+              </Text>
+            </View>
           )}
-        </View>
+        </SafeAreaView>
       </KeyboardAvoidingView>
 
       {/* Poll Modal */}
@@ -589,6 +598,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
+  headerIcon: {
+    width: 20,
+    height: 20,
+  },
   headerButton: {
     fontSize: 16,
     fontWeight: '500',
@@ -667,37 +680,47 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginTop: 8,
   },
-  bottomToolbar: {
+  bottomToolbarNatural: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 4, // no vertical padding
     borderTopWidth: 1,
+    paddingStart:16,
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
+    bottom: 0,
+    // paddingBottom: 0, // ensure no extra space
   },
-  mediaIcons: {
+  mediaIconsNatural: {
     flexDirection: 'row',
-    gap: 20,
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'flex-start',
   },
-  mediaButton: {
-    width: 32,
-    height: 32,
+  mediaButtonNatural: {
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  mediaIcon: {
-    width: 24,
-    height: 24,
+  mediaIconNatural: {
+    width: 26,
+    height: 26,
   },
-  mediaIconText: {
-    fontSize: 16,
+  mediaIconTextNatural: {
+    fontSize: 17,
     fontWeight: 'bold',
   },
-  characterCount: {
+  characterCountNaturalContainer: {
+    flex: 0,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginLeft: 'auto',
+  },
+  characterCountNatural: {
     fontSize: 14,
     fontWeight: '500',
   },

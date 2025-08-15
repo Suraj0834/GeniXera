@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, Image, Platform } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, Image, Platform, InteractionManager, PanResponder } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import ReportScreen from './ReportScreen';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -10,13 +11,45 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
   const slideAnim = React.useRef(new Animated.Value(height)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const [isReportScreenVisible, setIsReportScreenVisible] = React.useState(false);
+  const dragY = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets(); // Get device safe area insets
+
+  // PanResponder for downward slide
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return gestureState.dy > 10;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          dragY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 80) {
+          handleClose();
+        } else {
+          Animated.spring(dragY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(dragY, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+      },
+    })
+  ).current;
 
   React.useEffect(() => {
     if (isVisible) {
       // Reset position and fade in
       slideAnim.setValue(height);
       fadeAnim.setValue(0);
-      
+      dragY.setValue(0); // <-- Ensure dragY is reset on open
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
@@ -30,20 +63,21 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
         }),
       ]).start();
     } else {
-      // Fade out and slide down
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: height,
-          duration: 200,
+          duration: Platform.OS === 'android' ? 90 : 200, // Even shorter for Android
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: 150,
+          duration: Platform.OS === 'android' ? 60 : 150, // Even shorter for Android
           useNativeDriver: true,
         }),
       ]).start(() => {
-        onClose();
+        InteractionManager.runAfterInteractions(() => {
+          onClose();
+        });
       });
     }
   }, [isVisible]);
@@ -52,16 +86,18 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: height,
-        duration: 200,
+        duration: Platform.OS === 'android' ? 90 : 200, // Even shorter for Android
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 150,
+        duration: Platform.OS === 'android' ? 60 : 150, // Even shorter for Android
         useNativeDriver: true,
       }),
     ]).start(() => {
-      onClose();
+      InteractionManager.runAfterInteractions(() => {
+        onClose();
+      });
     });
   };
 
@@ -87,6 +123,13 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
     { icon: require('../assets/Report_icon.png'), text: 'Report post', action: 'report' },
   ];
 
+  const getBottomSpace = () => {
+    if (Platform.OS === 'android') {
+      return 24; // Reduced navigation bar height
+    }
+    return 0;
+  };
+
   return (
     <Modal
       visible={isVisible}
@@ -95,44 +138,57 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
       onRequestClose={handleClose}
       statusBarTranslucent={true}
     >
-      <View style={[styles.container, { backgroundColor: theme.overlay }]}>
+      <View style={styles.absoluteFill}>
+        {/* Fallback: Use a transparent overlay for both iOS and Android */}
         <TouchableOpacity
-          style={styles.overlay}
+          style={[styles.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.08)' }]}
           activeOpacity={1}
           onPress={handleClose}
         />
+        <View style={styles.container}>
+          <Animated.View
+            {...panResponder.panHandlers}
+            style={[
+              styles.modalContainer,
+              { 
+                backgroundColor: theme.BottomNavigationBackground,
+                transform: [
+                  { translateY: Animated.add(slideAnim, dragY) }
+                ],
+                paddingBottom: insets.bottom,
+                borderTopWidth: 1,
+                borderTopColor: '#D2BD00',
+              },
+            ]}
+          >
+            {/* Drag Handle */}
+            <View style={styles.dragHandle} />
 
-        <Animated.View
-          style={[
-            styles.modalContainer,
-            { backgroundColor: theme.card, transform: [{ translateY: slideAnim }] },
-          ]}
-        >
-          {/* Drag Handle */}
-          <View style={styles.dragHandle} />
-          
-          {/* Options Container */}
-          <View style={styles.optionsContainer}>
-            {options.map((option, index) => (
-              <React.Fragment key={index}>
-                <TouchableOpacity
-                  style={styles.optionItem}
-                  onPress={() => handleOptionPress(option.action)}
-                >
-                  <Image source={option.icon} style={styles.optionIcon} resizeMode="contain" />
-                  <Text style={styles.optionText}>{option.text}</Text>
-                </TouchableOpacity>
-                
-                {/* Add divider after specific options */}
-                {(option.action === 'not_interested' || option.action === 'block' || option.action === 'transaction') && (
-                  <View style={styles.divider} />
-                )}
-              </React.Fragment>
-            ))}
-          </View>
-        </Animated.View>
+            {/* Top Rectangle Design */}
+            <View style={styles.topRectangle} />
+
+            {/* Options Container */}
+            <View style={styles.optionsContainer}>
+              {options.map((option, index) => (
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    style={styles.optionItem}
+                    onPress={() => handleOptionPress(option.action)}
+                  >
+                    <Image source={option.icon} style={styles.optionIcon} resizeMode="contain" />
+                    <Text style={styles.optionText}>{option.text}</Text>
+                  </TouchableOpacity>
+                  
+                  {/* Add divider after specific options */}
+                  {(option.action === 'not_interested' || option.action === 'block' || option.action === 'transaction') && (
+                    <View style={styles.divider} />
+                  )}
+                </React.Fragment>
+              ))}
+            </View>
+          </Animated.View>
+        </View>
       </View>
-      
       {/* Report Screen */}
       <ReportScreen 
         isVisible={isReportScreenVisible}
@@ -144,18 +200,12 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
 };
 
 const styles = StyleSheet.create({
+  absoluteFill: {
+    ...StyleSheet.absoluteFillObject,
+  },
   container: {
     flex: 1,
     justifyContent: 'flex-end',
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 999,
   },
   modalContainer: {
     position: 'absolute',
@@ -166,7 +216,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     zIndex: 1000,
-    paddingBottom: 30,
+    paddingBottom: 16,
+    // borderColor and borderWidth removed
   },
   dragHandle: {
     width: 40,
@@ -177,14 +228,22 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
   },
+  topRectangle: {
+    width: 60,
+    height: 8,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 4,
+    marginBottom: 8,
+    alignSelf: 'center',
+  },
   optionsContainer: {
     paddingHorizontal: 20,
   },
   optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingStart: 20, // Added left padding
+    paddingVertical: 8, // Reduced from 16 to 8
+    paddingStart: 20,
   },
   optionIcon: {
     width: 20,
@@ -200,8 +259,8 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: 'rgba(210, 189, 0, 0.2)',
-    marginVertical: 4, // Reduced from 16 to 4
+    marginVertical: 2, // Reduced from 4 to 2
   },
 });
 
-export default PostOptionsModal; 
+export default PostOptionsModal;
