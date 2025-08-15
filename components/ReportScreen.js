@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, Platform, InteractionManager, Image, PanResponder } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, Platform, InteractionManager, Image, PanResponder, Easing } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import ReportSuccessScreen from './ReportSuccessScreen';
 
 const { width, height } = Dimensions.get('window');
 
@@ -11,6 +12,7 @@ const ReportScreen = ({ isVisible, onClose, postData }) => {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+  const [isSuccessScreenVisible, setIsSuccessScreenVisible] = useState(false);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -62,12 +64,14 @@ const ReportScreen = ({ isVisible, onClose, postData }) => {
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: height,
-          duration: Platform.OS === 'android' ? 180 : 250,
+          duration: 250,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: Platform.OS === 'android' ? 120 : 200,
+          duration: 200,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ]).start();
@@ -78,12 +82,14 @@ const ReportScreen = ({ isVisible, onClose, postData }) => {
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: height,
-        duration: Platform.OS === 'android' ? 180 : 250,
+        duration: 250,
+        easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: Platform.OS === 'android' ? 120 : 200,
+        duration: 200,
+        easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -94,8 +100,7 @@ const ReportScreen = ({ isVisible, onClose, postData }) => {
   };
 
   const handleReportOption = (option) => {
-    console.log('Report option selected:', option);
-    handleClose();
+    setIsSuccessScreenVisible(true);
   };
 
   const reportOptions = [
@@ -155,6 +160,14 @@ const ReportScreen = ({ isVisible, onClose, postData }) => {
           </SafeAreaView>
         </Animated.View>
       </View>
+      <ReportSuccessScreen
+        isVisible={isSuccessScreenVisible}
+        onClose={() => {
+          setIsSuccessScreenVisible(false);
+          onClose();
+        }}
+        theme={theme}
+      />
     </Modal>
   );
 };

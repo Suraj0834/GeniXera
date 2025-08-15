@@ -68,7 +68,7 @@ const CreatPostScreen = ({ navigation, route }) => {
       const data = await response.json();
       setTrendingGifs(data.data || []);
     } catch (error) {
-      console.error('Failed to fetch trending GIFs:', error);
+      
     } finally {
       setIsLoadingGifs(false);
     }
@@ -88,7 +88,7 @@ const CreatPostScreen = ({ navigation, route }) => {
       const data = await response.json();
       setSearchedGifs(data.data || []);
     } catch (error) {
-      console.error('GIF search error:', error);
+      
     } finally {
       setIsLoadingGifs(false);
     }
@@ -134,7 +134,6 @@ const CreatPostScreen = ({ navigation, route }) => {
         navigation.navigate('MediaEdit', { media: asset });
       }
     } catch (error) {
-      console.error('Media selection error:', error);
       Alert.alert('Error', 'Failed to select media');
     }
   };
@@ -267,7 +266,7 @@ const CreatPostScreen = ({ navigation, route }) => {
         <ScrollView style={styles.scrollView}>
           <TextInput
             ref={textInputRef}
-            style={[styles.textInput, { color: theme.text }]}
+            style={[styles.textInput, { color: theme.text, backgroundColor: theme.inputBackground }]}
             placeholder="What's happening?"
             placeholderTextColor={theme.placeholder}
             multiline

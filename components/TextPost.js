@@ -28,7 +28,7 @@ const TextPost = ({ isFirstPost = false, onOptionsOpen, onOptionsClose, isModalO
           <View style={styles.headerRightContent}>
             <Text style={[styles.timestamp, { color: theme.placeholder }]}>2h ago</Text>
             <TouchableOpacity style={styles.optionsButton} onPress={handleOptionsPress}>
-              <Text style={[styles.optionsIcon, { color: theme.text }]}>⋮</Text>
+              <Text style={[styles.optionsIcon, { color: theme.icon }]}>⋮</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, Image, Platform, InteractionManager, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, Image, Platform, InteractionManager, PanResponder, Easing } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import ReportScreen from './ReportScreen';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,12 +67,14 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: height,
-          duration: Platform.OS === 'android' ? 200 : 200,
+          duration: 250,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: Platform.OS === 'android' ? 150 : 150,
+          duration: 200,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ]).start(() => {
@@ -87,12 +89,14 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: height,
-        duration: Platform.OS === 'android' ? 150 : 200,
+        duration: 250,
+        easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: Platform.OS === 'android' ? 120 : 150,
+        duration: 200,
+        easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -104,7 +108,6 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
 
   const handleOptionPress = (option) => {
     // Handle different options here
-    console.log('Selected option:', option);
     
     if (option === 'report') {
       setIsReportScreenVisible(true);
@@ -189,7 +192,10 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
       {/* Report Screen */}
       <ReportScreen 
         isVisible={isReportScreenVisible}
-        onClose={() => setIsReportScreenVisible(false)}
+        onClose={() => {
+          setIsReportScreenVisible(false);
+          handleClose();
+        }}
         postData={postData}
       />
     </Modal>
