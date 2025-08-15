@@ -46,6 +46,7 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
 
   React.useEffect(() => {
     if (isVisible) {
+      setIsReportScreenVisible(false);
       // Reset position and fade in
       slideAnim.setValue(height);
       fadeAnim.setValue(0);
@@ -66,12 +67,12 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: height,
-          duration: Platform.OS === 'android' ? 90 : 200, // Even shorter for Android
+          duration: Platform.OS === 'android' ? 200 : 200,
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: Platform.OS === 'android' ? 60 : 150, // Even shorter for Android
+          duration: Platform.OS === 'android' ? 150 : 150,
           useNativeDriver: true,
         }),
       ]).start(() => {
@@ -86,12 +87,12 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: height,
-        duration: Platform.OS === 'android' ? 90 : 200, // Even shorter for Android
+        duration: Platform.OS === 'android' ? 150 : 200,
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: Platform.OS === 'android' ? 60 : 150, // Even shorter for Android
+        duration: Platform.OS === 'android' ? 120 : 150,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -107,7 +108,6 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
     
     if (option === 'report') {
       setIsReportScreenVisible(true);
-      handleClose();
     } else {
       handleClose();
     }
@@ -164,9 +164,6 @@ const PostOptionsModal = ({ isVisible, onClose, postData }) => {
             {/* Drag Handle */}
             <View style={styles.dragHandle} />
 
-            {/* Top Rectangle Design */}
-            <View style={styles.topRectangle} />
-
             {/* Options Container */}
             <View style={styles.optionsContainer}>
               {options.map((option, index) => (
@@ -220,21 +217,13 @@ const styles = StyleSheet.create({
     // borderColor and borderWidth removed
   },
   dragHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#000',
-    borderRadius: 2,
+    width: 45,
+    height: 5,
+    backgroundColor: '#D2BD00',
+    borderRadius: 2.5,
     alignSelf: 'center',
     marginTop: 12,
-    marginBottom: 8,
-  },
-  topRectangle: {
-    width: 60,
-    height: 8,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 4,
-    marginBottom: 8,
-    alignSelf: 'center',
+    marginBottom: 12,
   },
   optionsContainer: {
     paddingHorizontal: 20,
@@ -242,7 +231,7 @@ const styles = StyleSheet.create({
   optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8, // Reduced from 16 to 8
+    paddingVertical: 10,
     paddingStart: 20,
   },
   optionIcon: {
