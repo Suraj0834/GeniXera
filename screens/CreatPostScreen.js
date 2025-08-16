@@ -13,24 +13,51 @@ import {
   Modal,
   FlatList,
   Alert,
-  Linking
+  Linking,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../theme/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import MediaPickerModal from '../components/MediaPickerModal'; // New import
 
 const GIPHY_API_KEY = 'jP6unvOG0M9LwVPpYup8CG0iujyXJ5Sp';
 const GIPHY_BASE_URL = 'https://api.giphy.com/v1/gifs';
 
+const CustomIcon = ({ source, defaultText, imageStyle, textStyle }) => {
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false); // Reset error state when source changes
+  }, [source]);
+
+  if (imageError) {
+    return <Text style={textStyle}>{defaultText}</Text>;
+  }
+
+  return (
+    <Image
+      source={source}
+      style={imageStyle}
+      onError={(e) => {
+        console.log('Image loading error:', e.nativeEvent.error);
+        setImageError(true);
+      }}
+    />
+  );
+};
+
 const CreatPostScreen = ({ navigation, route }) => {
-  const { theme } = useTheme();
+    const { theme } = useTheme();
+  const styles = getStyles(theme);
   const insets = useSafeAreaInsets();
   const textInputRef = useRef(null);
   
   const [postText, setPostText] = useState('');
   const [isPollModalVisible, setIsPollModalVisible] = useState(false);
   const [isGifModalVisible, setIsGifModalVisible] = useState(false);
+  const [isMediaPickerModalVisible, setIsMediaPickerModalVisible] = useState(false); // New state variable
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [pollQuestion, setPollQuestion] = useState('');
@@ -41,6 +68,9 @@ const CreatPostScreen = ({ navigation, route }) => {
   const [mcqCorrectAnswer, setMcqCorrectAnswer] = useState(0);
   const [isLoadingGifs, setIsLoadingGifs] = useState(false);
   const [trendingGifs, setTrendingGifs] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMoreGifs, setHasMoreGifs] = useState(true);
+  const [isEditingPoll, setIsEditingPoll] = useState(false); // New state variable
 
   // Add this to get callback from HomeScreen
   const addPostToHome = route.params?.addPostToHome;
@@ -60,13 +90,26 @@ const CreatPostScreen = ({ navigation, route }) => {
   }, []);
 
   const fetchTrendingGifs = async () => {
+    if (!hasMoreGifs || isLoadingGifs) return;
+
     try {
       setIsLoadingGifs(true);
       const response = await fetch(
-        `${GIPHY_BASE_URL}/trending?api_key=${GIPHY_API_KEY}&limit=20`
+        `${GIPHY_BASE_URL}/trending?api_key=${GIPHY_API_KEY}&limit=25&offset=${offset}`
       );
       const data = await response.json();
-      setTrendingGifs(data.data || []);
+      
+      if (data.data.length === 0) {
+        setHasMoreGifs(false);
+      } else {
+        setTrendingGifs((prevGifs) => {
+          const uniqueNewGifs = data.data.filter(
+            (newGif) => !prevGifs.some((existingGif) => existingGif.id === newGif.id)
+          );
+          return [...prevGifs, ...uniqueNewGifs];
+        });
+        setOffset((prevOffset) => prevOffset + data.data.length);
+      }
     } catch (error) {
       
     } finally {
@@ -83,7 +126,7 @@ const CreatPostScreen = ({ navigation, route }) => {
     try {
       setIsLoadingGifs(true);
       const response = await fetch(
-        `${GIPHY_BASE_URL}/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=20`
+        `${GIPHY_BASE_URL}/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}`
       );
       const data = await response.json();
       setSearchedGifs(data.data || []);
@@ -94,33 +137,43 @@ const CreatPostScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleMediaPress = async () => {
-    Alert.alert(
-      'Add Media',
-      'Choose an option',
-      [
-        {
-          text: 'Camera',
-          onPress: () => pickMedia('camera'),
-        },
-        {
-          text: 'Library',
-          onPress: () => pickMedia('library'),
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+  const handleMediaPress = () => {
+    setIsMediaPickerModalVisible(true);
   };
 
   const pickMedia = async (source) => {
     try {
       let result;
       if (source === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Permission Required',
+            'Camera permission is needed to take photos. Please enable it in your device settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+          return;
+        }
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.All,
           quality: 1,
         });
       } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Permission Required',
+            'Media library permission is needed to pick photos/videos. Please enable it in your device settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+          return;
+        }
         result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.All,
           quality: 1,
@@ -131,10 +184,12 @@ const CreatPostScreen = ({ navigation, route }) => {
 
       if (result.assets && result.assets[0]) {
         const asset = result.assets[0];
-        navigation.navigate('MediaEdit', { media: asset });
+        // Pass width and height to MediaEditScreen
+        navigation.navigate('MediaEdit', { media: { ...asset, width: asset.width, height: asset.height } });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to select media');
+      console.error('Error picking media:', error); // Log the actual error for debugging
+      Alert.alert('Error', 'Failed to select media. Please try again.');
     }
   };
 
@@ -216,7 +271,9 @@ const CreatPostScreen = ({ navigation, route }) => {
       onPress={() => {
         setSelectedMedia({ 
           uri: item.images.original.url,
-          type: 'gif'
+          type: 'gif',
+          width: parseInt(item.images.original.width),
+          height: parseInt(item.images.original.height),
         });
         setIsGifModalVisible(false);
       }}
@@ -229,16 +286,16 @@ const CreatPostScreen = ({ navigation, route }) => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'} />
       
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.border }]}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           {/* Replace Cancel text with left arrow icon */}
           <Image
             source={require('../assets/arrow_left.png')} // Use your left arrow icon here
-            style={[styles.headerIcon, { tintColor: theme.icon }]}
+            style={styles.headerIcon}
             resizeMode="contain"
           />
         </TouchableOpacity>
@@ -246,14 +303,13 @@ const CreatPostScreen = ({ navigation, route }) => {
           style={[
             styles.postButton, 
             { 
-              backgroundColor: theme.button,
               opacity: (postText.trim() || selectedMedia || createdPoll) ? 1 : 0.5
             }
           ]}
           onPress={handlePost}
           disabled={!postText.trim() && !selectedMedia && !createdPoll}
         >
-          <Text style={[styles.postButtonText, { color: theme.buttonText }]}>Post</Text>
+          <Text style={styles.postButtonText}>Post</Text>
         </TouchableOpacity>
       </View>
 
@@ -264,22 +320,29 @@ const CreatPostScreen = ({ navigation, route }) => {
         keyboardVerticalOffset={Platform.select({ ios: 90, android: 0 })}
       >
         <ScrollView style={styles.scrollView}>
-          <TextInput
-            ref={textInputRef}
-            style={[styles.textInput, { color: theme.text, backgroundColor: theme.inputBackground }]}
-            placeholder="What's happening?"
-            placeholderTextColor={theme.placeholder}
-            multiline
-            value={postText}
-            onChangeText={setPostText}
-          />
+          <View style={styles.inputContainer}>
+            <Image
+              source={require('../assets/Profile.png')}
+              style={styles.profileImage}
+            />
+            <TextInput
+              ref={textInputRef}
+              style={styles.textInput}
+              placeholder="What's happening?"
+              placeholderTextColor={theme.placeholder}
+              multiline
+              value={postText}
+              onChangeText={setPostText}
+            />
+          </View>
 
           {selectedMedia && (
             <View style={styles.mediaPreview}>
               {selectedMedia.type === 'gif' || selectedMedia.type?.startsWith('image') ? (
                 <Image 
                   source={{ uri: selectedMedia.uri }} 
-                  style={styles.mediaImage}
+                  style={[styles.mediaImage, { aspectRatio: selectedMedia.width / selectedMedia.height }]} 
+                  resizeMode="contain"
                 />
               ) : (
                 <View style={styles.videoPlaceholder}>
@@ -290,14 +353,17 @@ const CreatPostScreen = ({ navigation, route }) => {
                 style={styles.removeMedia}
                 onPress={() => setSelectedMedia(null)}
               >
-                <Text style={{ color: '#FF0000' }}>×</Text>
+                <Image
+                  source={require('../assets/remove_icon.png')} // Assuming remove_icon.png exists
+                  style={styles.removeMediaImage} // New style for this image
+                />
               </TouchableOpacity>
             </View>
           )}
 
           {createdPoll && (
-            <View style={[styles.pollPreview, { backgroundColor: theme.card }]}>
-              <Text style={[styles.pollQuestion, { color: theme.text }]}>
+            <View style={styles.pollPreview}>
+              <Text style={styles.pollQuestion}>
                 {createdPoll.question}
               </Text>
               {createdPoll.options.map((opt, idx) => (
@@ -306,7 +372,6 @@ const CreatPostScreen = ({ navigation, route }) => {
                   style={[
                     styles.pollOptionPreview,
                     { 
-                      borderColor: theme.border,
                       backgroundColor: createdPoll.type === 'mcq' && createdPoll.correctAnswer === idx ? 
                         'rgba(210, 189, 0, 0.2)' : 'transparent'
                     }
@@ -315,12 +380,32 @@ const CreatPostScreen = ({ navigation, route }) => {
                   <Text style={{ color: theme.text }}>{opt}</Text>
                 </View>
               ))}
-              <TouchableOpacity 
-                style={styles.removePoll}
-                onPress={() => setCreatedPoll(null)}
-              >
-                <Text style={{ color: '#FF0000' }}>Remove Poll</Text>
-              </TouchableOpacity>
+              {/* New icons for edit and remove */}
+              <View style={styles.pollActionIcons}>
+                <TouchableOpacity
+                  style={styles.pollEditIcon}
+                  onPress={handlePollPress}
+                >
+                  {/* Conditionally render Image or Text based on whether custom icon loads */}
+                  <CustomIcon
+                    source={require('../assets/edit_icon.png')}
+                    defaultText="✎"
+                    imageStyle={styles.pollImage}
+                    textStyle={styles.pollIconText}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.pollRemoveIcon}
+                  onPress={() => setCreatedPoll(null)}
+                >
+                  <CustomIcon
+                    source={require('../assets/remove_icon.png')}
+                    defaultText="×"
+                    imageStyle={styles.pollImage}
+                    textStyle={styles.pollIconText}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </ScrollView>
@@ -328,15 +413,7 @@ const CreatPostScreen = ({ navigation, route }) => {
         {/* Improved Bottom Toolbar */}
         <SafeAreaView
           edges={[]} // changed from ['bottom'] to [] to avoid extra bottom space
-          style={[
-            styles.bottomToolbarNatural, 
-            {
-              backgroundColor: theme.card,
-              borderTopColor: theme.accent,
-              borderTopWidth: 1,
-              // removed paddingBottom logic
-            }
-          ]}
+          style={styles.bottomToolbarNatural}
         >
           <View style={styles.mediaIconsNatural}>
             <TouchableOpacity 
@@ -346,7 +423,7 @@ const CreatPostScreen = ({ navigation, route }) => {
             >
               <Image 
                 source={require('../assets/camera_icon.png')} 
-                style={[styles.mediaIconNatural, { tintColor: theme.accent }]}
+                style={styles.mediaIconNatural}
                 resizeMode="contain"
               />
             </TouchableOpacity>
@@ -355,7 +432,11 @@ const CreatPostScreen = ({ navigation, route }) => {
               onPress={handleGifPress}
               activeOpacity={0.7}
             >
-              <Text style={[styles.mediaIconTextNatural, { color: theme.accent }]}>GIF</Text>
+              <Image 
+                source={require('../assets/gif_icon.png')} 
+                style={styles.mediaIconNatural}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.mediaButtonNatural}
@@ -364,7 +445,7 @@ const CreatPostScreen = ({ navigation, route }) => {
             >
               <Image 
                 source={require('../assets/ic_outline-poll.png')} 
-                style={[styles.mediaIconNatural, { tintColor: theme.accent }]}
+                style={styles.mediaIconNatural}
                 resizeMode="contain"
               />
             </TouchableOpacity>
@@ -393,26 +474,19 @@ const CreatPostScreen = ({ navigation, route }) => {
         onRequestClose={() => setIsPollModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.pollModal, { backgroundColor: theme.card }]}>
+          <View style={styles.pollModal}>
             <View style={styles.pollHeader}>
               <TouchableOpacity onPress={() => setIsPollModalVisible(false)}>
-                <Text style={[styles.modalClose, { color: theme.accent }]}>×</Text>
+                <Text style={styles.modalClose}>×</Text>
               </TouchableOpacity>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Create Poll</Text>
+              <Text style={styles.modalTitle}>Create Poll</Text>
               <TouchableOpacity onPress={createPoll}>
-                <Text style={[styles.createButton, { color: theme.accent }]}>Create</Text>
+                <Text style={styles.createButton}>Create</Text>
               </TouchableOpacity>
             </View>
 
             <TextInput
-              style={[
-                styles.pollInput, 
-                { 
-                  backgroundColor: theme.inputBackground,
-                  color: theme.text,
-                  borderColor: theme.accent
-                }
-              ]}
+              style={styles.pollInput}
               placeholder="Ask a question..."
               placeholderTextColor={theme.placeholder}
               value={pollQuestion}
@@ -423,14 +497,13 @@ const CreatPostScreen = ({ navigation, route }) => {
               <TouchableOpacity
                 style={[
                   styles.pollTypeButton, 
-                  { backgroundColor: theme.inputBackground },
                   pollType === 'poll' && { backgroundColor: theme.accent }
                 ]}
                 onPress={() => setPollType('poll')}
               >
                 <Text style={[
                   styles.pollTypeText,
-                  pollType === 'poll' ? { color: '#000' } : { color: theme.text }
+                  pollType === 'poll' && { color: '#000' }
                 ]}>
                   Poll
                 </Text>
@@ -438,14 +511,13 @@ const CreatPostScreen = ({ navigation, route }) => {
               <TouchableOpacity
                 style={[
                   styles.pollTypeButton, 
-                  { backgroundColor: theme.inputBackground },
                   pollType === 'mcq' && { backgroundColor: theme.accent }
                 ]}
                 onPress={() => setPollType('mcq')}
               >
                 <Text style={[
                   styles.pollTypeText,
-                  pollType === 'mcq' ? { color: '#000' } : { color: theme.text }
+                  pollType === 'mcq' && { color: '#000' }
                 ]}>
                   MCQ
                 </Text>
@@ -455,13 +527,7 @@ const CreatPostScreen = ({ navigation, route }) => {
             {pollOptions.map((option, index) => (
               <View key={index} style={styles.optionContainer}>
                 <TextInput
-                  style={[
-                    styles.optionInput, 
-                    { 
-                      backgroundColor: theme.inputBackground,
-                      color: theme.text
-                    }
-                  ]}
+                  style={styles.optionInput}
                   placeholder={`Option ${index + 1}`}
                   placeholderTextColor={theme.placeholder}
                   value={option}
@@ -471,7 +537,6 @@ const CreatPostScreen = ({ navigation, route }) => {
                   <TouchableOpacity
                     style={[
                       styles.correctAnswerButton,
-                      { borderColor: theme.accent },
                       mcqCorrectAnswer === index && { 
                         backgroundColor: theme.accent,
                         borderColor: theme.accent
@@ -500,14 +565,14 @@ const CreatPostScreen = ({ navigation, route }) => {
                 style={styles.addOption} 
                 onPress={addPollOption}
               >
-                <Text style={[styles.addOptionText, { color: theme.accent }]}>
+                <Text style={styles.addOptionText}>
                   + Add option
                 </Text>
               </TouchableOpacity>
             )}
 
             {pollType === 'mcq' && (
-              <Text style={[styles.mcqHelper, { color: theme.placeholder }]}>
+              <Text style={styles.mcqHelper}>
                 Select the correct answer by tapping the circle
               </Text>
             )}
@@ -523,24 +588,17 @@ const CreatPostScreen = ({ navigation, route }) => {
         onRequestClose={() => setIsGifModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.gifModal, { backgroundColor: theme.card }]}>
+          <View style={styles.gifModal}>
             <View style={styles.pollHeader}>
               <TouchableOpacity onPress={() => setIsGifModalVisible(false)}>
-                <Text style={[styles.modalClose, { color: theme.accent }]}>×</Text>
+                <Text style={styles.modalClose}>×</Text>
               </TouchableOpacity>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Search GIFs</Text>
+              <Text style={styles.modalTitle}>Search GIFs</Text>
             </View>
 
             <View style={styles.gifSearchContainer}>
               <TextInput
-                style={[
-                  styles.gifSearchInput, 
-                  { 
-                    backgroundColor: theme.inputBackground,
-                    color: theme.text,
-                    borderColor: theme.accent
-                  }
-                ]}
+                style={styles.gifSearchInput}
                 placeholder="Search GIFs..."
                 placeholderTextColor={theme.placeholder}
                 value={gifSearchQuery}
@@ -553,7 +611,7 @@ const CreatPostScreen = ({ navigation, route }) => {
 
             {isLoadingGifs ? (
               <View style={styles.loadingContainer}>
-                <Text style={[styles.loadingText, { color: theme.accent }]}>Loading GIFs...</Text>
+                <Text style={styles.loadingText}>Loading GIFs...</Text>
               </View>
             ) : (
               <FlatList
@@ -561,17 +619,26 @@ const CreatPostScreen = ({ navigation, route }) => {
                 keyExtractor={(item) => item.id}
                 renderItem={renderGifItem}
                 numColumns={2}
+                onEndReached={!gifSearchQuery ? fetchTrendingGifs : null}
+                onEndReachedThreshold={0.5}
                 ListHeaderComponent={
                   !gifSearchQuery && trendingGifs.length > 0 ? (
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Trending GIFs</Text>
+                    <Text style={styles.sectionTitle}>Trending GIFs</Text>
+                  ) : null
+                }
+                ListFooterComponent={
+                  isLoadingGifs && !gifSearchQuery ? (
+                    <View style={styles.loadingIndicatorContainer}>
+                      <ActivityIndicator size="large" color={theme.accent} />
+                    </View>
                   ) : null
                 }
                 ListEmptyComponent={
                   <View style={styles.noResultsContainer}>
-                    <Text style={[styles.noResultsText, { color: theme.text }]}>
+                    <Text style={styles.noResultsText}>
                       {gifSearchQuery ? 'No GIFs found' : 'No trending GIFs'}
                     </Text>
-                    <Text style={[styles.noResultsSubtext, { color: theme.placeholder }]}>
+                    <Text style={styles.noResultsSubtext}>
                       {gifSearchQuery ? 'Try a different search' : 'Check back later'}
                     </Text>
                   </View>
@@ -581,13 +648,24 @@ const CreatPostScreen = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Media Picker Modal */}
+      <MediaPickerModal
+        isVisible={isMediaPickerModalVisible}
+        onClose={() => setIsMediaPickerModalVisible(false)}
+        onSelectMedia={(source) => {
+          pickMedia(source);
+          setIsMediaPickerModalVisible(false);
+        }}
+      />
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -596,23 +674,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
+    borderBottomColor: theme.border,
   },
   headerIcon: {
     width: 20,
     height: 20,
-  },
-  headerButton: {
-    fontSize: 16,
-    fontWeight: '500',
+    tintColor: theme.icon,
   },
   postButton: {
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
+    backgroundColor: theme.button,
   },
   postButtonText: {
     fontSize: 16,
     fontWeight: '600',
+    color: theme.buttonText,
   },
   content: {
     flex: 1,
@@ -620,13 +698,25 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingBottom: 80,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    paddingTop: 16,
+  },
+    profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: theme.accent,
   },
   textInput: {
+    flex: 1,
     fontSize: 16,
+    color: theme.text,
     minHeight: 100,
     textAlignVertical: 'top',
-    paddingTop: 16,
   },
   mediaPreview: {
     marginTop: 16,
@@ -636,8 +726,6 @@ const styles = StyleSheet.create({
   },
   mediaImage: {
     width: '100%',
-    height: 200,
-    resizeMode: 'cover',
   },
   videoPlaceholder: {
     width: '100%',
@@ -650,74 +738,112 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 12,
     width: 24,
     height: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  removeMediaText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  removeMediaImage: {
+    width: 16, // Adjust as needed
+    height: 16, // Adjust as needed 
+    // Assuming white icons for visibility on dark backgrounds
+  },
   pollPreview: {
     marginTop: 16,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(210, 189, 0, 0.5)',
+    borderColor: theme.border,
+    backgroundColor: theme.card,
+    position: 'relative', // Added for absolute positioning of icons
   },
   pollQuestion: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 12,
+    color: theme.text,
   },
   pollOptionPreview: {
     padding: 12,
     borderWidth: 1,
     borderRadius: 8,
     marginBottom: 8,
+    borderColor: theme.border,
   },
-  removePoll: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
+  pollActionIcons: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    zIndex: 1, // Ensure icons are on top
+  },
+  pollEditIcon: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8, // Space between icons
+  },
+  pollRemoveIcon: {
+    backgroundColor: 'rgba(255,0,0,0.5)', // Red background for remove
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pollIconText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  pollImage: {
+    width: 25, // Adjust as needed
+    height: 25, // Adjust as needed
+    // Assuming white icons for visibility on dark backgrounds
   },
   bottomToolbarNatural: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 4, // no vertical padding
+    paddingVertical: 8,
     borderTopWidth: 1,
-    paddingStart:16,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    // paddingBottom: 0, // ensure no extra space
+    borderTopColor: theme.border,
+    backgroundColor: theme.background,
   },
   mediaIconsNatural: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'flex-start',
   },
   mediaButtonNatural: {
     width: 36,
     height: 36,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 16,
   },
   mediaIconNatural: {
     width: 26,
     height: 26,
+    tintColor: theme.accent,
   },
   mediaIconTextNatural: {
     fontSize: 17,
     fontWeight: 'bold',
+    color: theme.accent,
   },
   characterCountNaturalContainer: {
-    flex: 0,
-    alignItems: 'flex-end',
     justifyContent: 'center',
-    marginLeft: 'auto',
   },
   characterCountNatural: {
     fontSize: 14,
@@ -726,13 +852,14 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   pollModal: {
+    backgroundColor: theme.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    maxHeight: '70%',
+    maxHeight: '80%',
   },
   pollHeader: {
     flexDirection: 'row',
@@ -741,21 +868,27 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalClose: {
-    fontSize: 24,
+    fontSize: 28,
+    color: theme.accent,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: theme.text,
   },
   createButton: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: theme.accent,
   },
   pollInput: {
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
+    backgroundColor: theme.inputBackground,
+    color: theme.text,
+    borderColor: theme.border,
   },
   pollTypeContainer: {
     flexDirection: 'row',
@@ -767,9 +900,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     marginHorizontal: 8,
+    backgroundColor: theme.inputBackground,
   },
   pollTypeText: {
     fontWeight: 'bold',
+    color: theme.text,
   },
   addOption: {
     alignSelf: 'center',
@@ -777,6 +912,7 @@ const styles = StyleSheet.create({
   },
   addOptionText: {
     fontWeight: 'bold',
+    color: theme.accent,
   },
   optionContainer: {
     flexDirection: 'row',
@@ -788,6 +924,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginRight: 8,
+    backgroundColor: theme.inputBackground,
+    color: theme.text,
   },
   correctAnswerButton: {
     width: 32,
@@ -796,21 +934,25 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    borderColor: theme.accent,
   },
   correctAnswerText: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: theme.text,
   },
   mcqHelper: {
     fontSize: 12,
     textAlign: 'center',
     marginVertical: 8,
+    color: theme.placeholder,
   },
   gifModal: {
+    backgroundColor: theme.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    maxHeight: '70%',
+    maxHeight: '80%',
   },
   gifButton: {
     flex: 1,
@@ -829,6 +971,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
+    backgroundColor: theme.inputBackground,
+    color: theme.text,
+    borderColor: theme.border,
   },
   loadingContainer: {
     padding: 40,
@@ -838,6 +983,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontWeight: '500',
+    color: theme.accent,
   },
   noResultsContainer: {
     padding: 20,
@@ -845,17 +991,24 @@ const styles = StyleSheet.create({
   },
   noResultsText: {
     fontSize: 16,
+    color: theme.text,
   },
   noResultsSubtext: {
     fontSize: 14,
     marginTop: 4,
+    color: theme.placeholder,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 12,
     textAlign: 'center',
+    color: theme.text,
+  },
+  loadingIndicatorContainer: {
+    paddingVertical: 20,
   },
 });
+
 
 export default CreatPostScreen;

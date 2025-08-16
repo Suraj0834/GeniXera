@@ -22,7 +22,11 @@ const MediaEditScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { media } = route.params || {};
   
-  const [editedMedia, setEditedMedia] = useState(media || {});
+  const [editedMedia, setEditedMedia] = useState({
+    ...media,
+    width: media?.width,
+    height: media?.height,
+  });
   const [currentRotation, setCurrentRotation] = useState(0);
   const [currentScale, setCurrentScale] = useState(1);
 
