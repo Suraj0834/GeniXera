@@ -13,6 +13,7 @@ import ExploreScreen from './screens/ExploreScreen';
 import RewardsScreen from './screens/RewardsScreen';
 import SettingScreen from './screens/SettingScreen';
 import { ThemeProvider } from './theme/ThemeContext';
+import './appkit-config';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Stack = createStackNavigator();
