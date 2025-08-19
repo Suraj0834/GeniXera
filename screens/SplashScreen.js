@@ -31,7 +31,7 @@ const SplashScreen = () => {
     <View style={[styles.container, { backgroundColor: theme.background }]}> 
       <Animated.Image
         source={require('../assets/spalshicon.png')}
-        style={[styles.logo, { transform: [{ scale: logoScale }], backgroundColor: theme.card }]}
+        style={[styles.logo, { transform: [{ scale: logoScale }]}]}
         resizeMode="contain"
       />
       <Text style={[styles.motto, { color: theme.accent }]}>Create. Grow. Earn. Own.</Text>

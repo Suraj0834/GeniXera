@@ -1,10 +1,9 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StyleSheet, Text, View, TouchableOpacity, Image, Linking } from 'react-native';
-import React from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Image, Linking, AccessibilityInfo } from 'react-native';
+import React, { useEffect } from 'react';
 import { useAppKit, AppKit } from '@reown/appkit-ethers5-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../theme/ThemeContext';
-import Icon from 'react-native-vector-icons/Feather';
 
 function CustomWalletButton({ theme }) {
   const { open } = useAppKit();
@@ -13,33 +12,82 @@ function CustomWalletButton({ theme }) {
       style={[styles.button, { backgroundColor: theme.button }]}
       activeOpacity={0.85}
       onPress={open}
+      accessible={true}
+      accessibilityLabel="Connect wallet or login"
+      accessibilityRole="button"
     >
       <Image
         source={require('../assets/wallet.png')}
         style={styles.walletIcon}
         resizeMode="contain"
+        accessible={true}
+        accessibilityLabel="Wallet icon"
       />
       <Text style={[styles.buttonText, { color: theme.buttonText }]}>Connect / login</Text>
     </TouchableOpacity>
   );
 }
 
-import { useEffect } from 'react';
-
 const LoginScreen = ({ navigation }) => {
   const { mode, theme, toggleTheme } = useTheme();
   const { isConnected, address } = useAppKit();
 
+  // Update AppKit theme when app theme changes
+  useEffect(() => {
+    const { createAppKit } = require('@reown/appkit-ethers5-react-native');
+    
+    createAppKit({
+      themeMode: mode,
+      themeVariables: {
+        accent: theme.accent,
+        foreground: theme.text,
+        background: theme.background,
+        modalBackground: theme.background,
+        text: theme.text,
+        secondaryText: theme.placeholder,
+        border: theme.border,
+      }
+    });
+  }, [mode, theme]);
+
+  // Check for special code in cache when component mounts
+  useEffect(() => {
+    const checkSpecialCode = async () => {
+      try {
+        const specialCode = await AsyncStorage.getItem('reownSpecialCode');
+        if (specialCode) {
+          // If special code exists, redirect to Home
+          navigation.replace('Home');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking special code:', error);
+      }
+    };
+    checkSpecialCode();
+  }, [navigation]);
+
+  // Handle wallet connection
   useEffect(() => {
     async function handleRedirect() {
       if (isConnected && address) {
-        // Store wallet address as token
-        await AsyncStorage.setItem('token', address);
-        navigation.replace('Home');
+        try {
+          // Store wallet address as token
+          await AsyncStorage.setItem('token', address);
+          
+          // Store special code from Reown if provided
+          // This is just an example - replace with actual code from Reown
+          const reownCode = address.slice(0, 8); // Using first 8 chars of address as example
+          await AsyncStorage.setItem('reownSpecialCode', reownCode);
+          
+          navigation.replace('Home');
+        } catch (error) {
+          console.error('Error storing credentials:', error);
+        }
       }
     }
     handleRedirect();
-  }, [isConnected, address]);
+  }, [isConnected, address, navigation]);
 
   const handleLearnMore = () => {
     Linking.openURL('https://metamask.io/en-GB');
@@ -52,8 +100,16 @@ const LoginScreen = ({ navigation }) => {
     >
       {/* Theme Toggle Button */}
       <View style={styles.themeToggleContainer}>
-        <TouchableOpacity onPress={toggleTheme} style={styles.themeToggleButton}>
-          <Icon name={mode === 'dark' ? 'sun' : 'moon'} size={24} color={theme.icon} />
+        <TouchableOpacity 
+          onPress={toggleTheme} 
+          style={styles.themeToggleButton}
+          accessible={true}
+          accessibilityLabel={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.themeIcon, { color: theme.icon }]}>
+            {mode === 'dark' ? '☀️' : '🌙'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -70,7 +126,12 @@ const LoginScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.bottomContent}>
-        <Text style={[styles.enter, { color: theme.text }]}>Enter to GeniXera</Text>
+        <Text 
+          style={[styles.enter, { color: theme.text }]}
+          onPress={() => navigation.navigate('SignUp')}
+        >
+          Enter to GeniXera
+        </Text>
         <CustomWalletButton theme={theme} />
         <Text style={[styles.recommended, { color: theme.placeholder }]}> 
           Recommended Web3 Wallet
@@ -114,7 +175,14 @@ const styles = StyleSheet.create({
   middleContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' },
   slogan: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginVertical: 0 },
   bottomContent: { width: '100%', alignItems: 'center', marginBottom: 36 },
-  enter: { fontSize: 20, fontWeight: 'bold', marginBottom: 18, marginStart: 130, width: '100%' },
+  enter: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    marginBottom: 18, 
+    marginStart: 130, 
+    width: '100%',
+    textDecorationLine: 'underline', // Add underline to make it look clickable
+  },
   button: {
     flexDirection: 'row',
     gap: 10,

@@ -14,13 +14,15 @@ import {
   FlatList,
   Alert,
   Linking,
-  ActivityIndicator
+  ActivityIndicator,
+  PermissionsAndroid
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+// ...existing code...
 import { useTheme } from '../theme/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MediaPickerModal from '../components/MediaPickerModal'; // New import
+// Removed MediaPickerModal import
 
 const GIPHY_API_KEY = 'jP6unvOG0M9LwVPpYup8CG0iujyXJ5Sp';
 const GIPHY_BASE_URL = 'https://api.giphy.com/v1/gifs';
@@ -57,7 +59,7 @@ const CreatPostScreen = ({ navigation, route }) => {
   const [postText, setPostText] = useState('');
   const [isPollModalVisible, setIsPollModalVisible] = useState(false);
   const [isGifModalVisible, setIsGifModalVisible] = useState(false);
-  const [isMediaPickerModalVisible, setIsMediaPickerModalVisible] = useState(false); // New state variable
+  // Removed isMediaPickerModalVisible state
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [pollQuestion, setPollQuestion] = useState('');
@@ -137,61 +139,91 @@ const CreatPostScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleMediaPress = () => {
-    setIsMediaPickerModalVisible(true);
-  };
+  // Use permission hook for best practice
+  const [mediaStatus, requestMediaPermission] = ImagePicker.useMediaLibraryPermissions();
 
-  const pickMedia = async (source) => {
+  const handleMediaPress = async () => {
+    console.log('handleMediaPress called. mediaStatus:', mediaStatus);
     try {
-      let result;
-      if (source === 'camera') {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
+      if (!mediaStatus?.granted) {
+        const response = await requestMediaPermission();
+        console.log('Permission response:', response);
+        if (!response.granted) {
           Alert.alert(
             'Permission Required',
-            'Camera permission is needed to take photos. Please enable it in your device settings.',
+            'Please allow access to your photos and videos to select media.',
             [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+              { text: 'Open Settings', onPress: () => ImagePicker.openSettings() }
             ]
           );
           return;
         }
-        result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.All,
-          quality: 1,
-        });
-      } else {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert(
-            'Permission Required',
-            'Media library permission is needed to pick photos/videos. Please enable it in your device settings.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Open Settings', onPress: () => Linking.openSettings() },
-            ]
-          );
-          return;
-        }
-        result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.All,
-          quality: 1,
-        });
       }
-
-      if (result.canceled) return;
-
-      if (result.assets && result.assets[0]) {
+      // Open picker for both images and videos
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsEditing: true,
+        quality: 1,
+      });
+      console.log('ImagePicker result:', result);
+      if (!result.canceled && result.assets && result.assets[0]) {
         const asset = result.assets[0];
-        // Pass width and height to MediaEditScreen
-        navigation.navigate('MediaEdit', { media: { ...asset, width: asset.width, height: asset.height } });
+        if (asset.type === 'image') {
+          navigation.navigate('MediaEdit', { media: asset });
+        } else {
+          // For non-image types, use default navigation or handle as needed
+          // Example: navigation.navigate('DefaultScreen', { media: asset });
+          console.log('Non-image file selected:', asset);
+        }
       }
-    } catch (error) {
-      console.error('Error picking media:', error); // Log the actual error for debugging
-      Alert.alert('Error', 'Failed to select media. Please try again.');
+    } catch (err) {
+      console.error('Error in handleMediaPress:', err);
+      Alert.alert('Error', 'An error occurred while picking media.');
     }
   };
+
+
+  // Simple camera and gallery logic using expo-image-picker
+  const openCamera = async (mode = 'photo') => {
+    let cameraResult;
+    if (mode === 'photo') {
+      cameraResult = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'image',
+        allowsEditing: true,
+        quality: 1,
+      });
+    } else {
+      cameraResult = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'video',
+        videoMaxDuration: 60,
+        quality: 1,
+      });
+    }
+    if (!cameraResult.canceled && cameraResult.assets && cameraResult.assets[0]) {
+      const asset = cameraResult.assets[0];
+      navigation.navigate('MediaEdit', { media: { ...asset, width: asset.width, height: asset.height } });
+    }
+  };
+
+  const openGallery = async () => {
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['image', 'video'],
+      allowsEditing: true,
+      quality: 1,
+    });
+    if (!pickerResult.canceled && pickerResult.assets && pickerResult.assets[0]) {
+      const asset = pickerResult.assets[0];
+      navigation.navigate('MediaEdit', { media: { ...asset, width: asset.width, height: asset.height } });
+    }
+  };
+
+
+
+  // Use these functions in your UI:
+  // openCamera('photo') for photo
+  // openCamera('video') for video
+  // openGallery() for gallery
 
   const handlePollPress = () => {
     setIsPollModalVisible(true);
@@ -649,15 +681,7 @@ const CreatPostScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
-      {/* Media Picker Modal */}
-      <MediaPickerModal
-        isVisible={isMediaPickerModalVisible}
-        onClose={() => setIsMediaPickerModalVisible(false)}
-        onSelectMedia={(source) => {
-          pickMedia(source);
-          setIsMediaPickerModalVisible(false);
-        }}
-      />
+  {/* Media Picker Modal removed. Camera icon now opens gallery for both images and videos. */}
     </SafeAreaView>
   );
 };

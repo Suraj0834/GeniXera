@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "genixera",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -15,9 +16,12 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow GeniXera to access your camera to take photos and videos for posts.",
-        "NSPhotoLibraryUsageDescription": "Allow GeniXera to access your photo library to select media for posts."
-      }
+        "NSCameraUsageDescription": "Allow GeniXera to access your camera to capture photos and videos for your posts",
+        "NSPhotoLibraryUsageDescription": "Allow GeniXera to access your photo library to select media for your posts",
+        "NSPhotoLibraryAddUsageDescription": "Allow GeniXera to save photos and videos to your library",
+        "NSMicrophoneUsageDescription": "Allow GeniXera to access your microphone for recording videos"
+      },
+      "bundleIdentifier": "com.suraj0834.GeniXeraClean"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,13 +30,25 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_MEDIA_VIDEO"
-      ]
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO"
+      ],
+      "package": "com.suraj0834.GeniXeraClean"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "GeniXera needs access to your photos and videos to let you share them.",
+          "cameraPermission": "GeniXera needs access to your camera to let you take photos and videos."
+        }
+      ]
+    ]
   }
 }
