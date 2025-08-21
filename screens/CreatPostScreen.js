@@ -163,18 +163,18 @@ const CreatPostScreen = ({ navigation, route }) => {
       // Open picker for both images and videos
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images', 'videos'],
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 1,
       });
       console.log('ImagePicker result:', result);
       if (!result.canceled && result.assets && result.assets[0]) {
         const asset = result.assets[0];
         if (asset.type === 'image') {
-          navigation.navigate('MediaEdit', { media: asset });
+          navigation.navigate('MediaEdit', { media: { ...asset, type: 'image', width: asset.width, height: asset.height } });
+        } else if (asset.type === 'video') {
+          navigation.navigate('MediaEdit', { media: { ...asset, type: 'video', width: asset.width, height: asset.height, duration: asset.duration } });
         } else {
-          // For non-image types, use default navigation or handle as needed
-          // Example: navigation.navigate('DefaultScreen', { media: asset });
-          console.log('Non-image file selected:', asset);
+          console.log('Unsupported media type selected:', asset);
         }
       }
     } catch (err) {

@@ -48,7 +48,9 @@
           "photosPermission": "GeniXera needs access to your photos and videos to let you share them.",
           "cameraPermission": "GeniXera needs access to your camera to let you take photos and videos."
         }
-      ]
+      ],
+      "expo-video",
+      "react-native-video"
     ]
   }
 }
